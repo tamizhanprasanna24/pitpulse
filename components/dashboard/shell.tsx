@@ -8,7 +8,7 @@ import { useAuth } from '@/context/auth-context';
 import Image from 'next/image';
 import {
   Activity, Menu, X, Moon, Sun, LogOut, Bell, Search,
-  ChevronRight, Home, CheckCheck, Sparkles,
+  ChevronRight, Home, CheckCheck, User, Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +16,14 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/health-utils';
 import type { UserRole } from '@/types';
@@ -29,6 +37,7 @@ interface NavItem {
 const navByRole: Record<UserRole, NavItem[]> = {
   patient: [
     { label: 'Dashboard', href: '/dashboard/patient', icon: Home },
+    { label: 'Profile', href: '/dashboard/patient/profile', icon: User },
     { label: 'Health Tracker', href: '/dashboard/patient/health', icon: Activity },
     { label: 'Medicines', href: '/dashboard/patient/medicines', icon: Activity },
     { label: 'Orders', href: '/dashboard/patient/orders', icon: Activity },
@@ -171,17 +180,20 @@ export function DashboardShell({ children, title, description }: DashboardShellP
       </nav>
 
       <div className="border-t border-border p-3">
-        <div className="flex items-center gap-3 rounded-lg px-3 py-2">
+        <Link
+          href="/dashboard/patient/profile"
+          className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-secondary/80 group cursor-pointer"
+        >
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xs">
               {getInitials(activeProfile.full_name || 'Pit Pulse')}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 overflow-hidden">
-            <p className="truncate text-sm font-medium">{activeProfile.full_name}</p>
+            <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{activeProfile.full_name}</p>
             <p className="truncate text-xs text-muted-foreground">{activeProfile.email}</p>
           </div>
-        </div>
+        </Link>
         <Button variant="ghost" size="sm" onClick={handleSignOut} className="mt-2 w-full justify-start text-muted-foreground">
           <LogOut className="mr-2 h-4 w-4" /> Sign Out
         </Button>
@@ -284,11 +296,46 @@ export function DashboardShell({ children, title, description }: DashboardShellP
             </PopoverContent>
           </Popover>
 
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xs">
-              {getInitials(activeProfile.full_name || 'Pit Pulse')}
-            </AvatarFallback>
-          </Avatar>
+          {/* Interactive Profile Dropdown Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="rounded-full ring-2 ring-primary/30 hover:ring-primary focus:outline-none transition-all shadow-sm">
+                <Avatar className="h-9 w-9 cursor-pointer">
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xs font-bold">
+                    {getInitials(activeProfile.full_name || 'Pit Pulse')}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 shadow-2xl border-border/60">
+              <DropdownMenuLabel className="font-normal p-3 bg-muted/30">
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-bold leading-none">{activeProfile.full_name}</p>
+                  <p className="text-xs leading-none text-muted-foreground">{activeProfile.email}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => router.push('/dashboard/patient/profile')}
+                className="cursor-pointer font-medium"
+              >
+                <User className="mr-2 h-4 w-4 text-primary" /> View Patient Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => router.push('/dashboard/patient/health')}
+                className="cursor-pointer"
+              >
+                <Activity className="mr-2 h-4 w-4 text-accent" /> Health Tracker
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleSignOut}
+                className="cursor-pointer text-destructive focus:text-destructive font-medium"
+              >
+                <LogOut className="mr-2 h-4 w-4" /> Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
