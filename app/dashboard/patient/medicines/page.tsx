@@ -50,13 +50,17 @@ export default function MedicinesPage() {
     }
   }, []);
 
-  const categories = React.useMemo(() => {
-    const cats = new Set(medicines.map((m) => m.category).filter(Boolean));
-    return ['all', ...Array.from(cats)] as string[];
+  const activeMedicines = React.useMemo(() => {
+    return medicines && medicines.length > 0 ? medicines : SAMPLE_MEDICINES;
   }, [medicines]);
 
+  const categories = React.useMemo(() => {
+    const cats = new Set(activeMedicines.map((m) => m.category).filter(Boolean));
+    return ['all', ...Array.from(cats)] as string[];
+  }, [activeMedicines]);
+
   const filtered = React.useMemo(() => {
-    return medicines.filter((m) => {
+    return activeMedicines.filter((m) => {
       const matchSearch =
         !search ||
         m.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -70,7 +74,7 @@ export default function MedicinesPage() {
         (rxFilter === 'otc' && !m.prescription_required);
       return matchSearch && matchCategory && matchRx;
     });
-  }, [medicines, search, category, rxFilter]);
+  }, [activeMedicines, search, category, rxFilter]);
 
   const getPharmacy = (id: string) => pharmacies.find((p) => p.id === id);
 

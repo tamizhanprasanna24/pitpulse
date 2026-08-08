@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const STATIC_CACHE = `pitpulse-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pitpulse-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -15,6 +15,8 @@ const STATIC_ASSETS = [
   '/auth/login',
   '/auth/register',
   '/dashboard/patient',
+  '/dashboard/patient/medicines',
+  '/dashboard/patient/profile',
   '/dashboard/doctor',
   '/dashboard/asha',
   '/dashboard/pharmacy',
@@ -57,21 +59,18 @@ self.addEventListener('fetch', (event) => {
 
   if (url.origin !== self.location.origin) return;
 
-  // Next static files (Cache-first with background revalidate)
-  if (url.pathname.startsWith('/_next/static/')) {
+  // Next static files (Network-first for page HTML/JS to ensure fresh updates)
+  if (url.pathname.startsWith('/_next/static/') || url.pathname.includes('/dashboard/')) {
     event.respondWith(
-      caches.match(request).then((cached) => {
-        const fetchPromise = fetch(request)
-          .then((response) => {
-            if (response && response.status === 200) {
-              const clone = response.clone();
-              caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
-            }
-            return response;
-          })
-          .catch(() => cached);
-        return cached || fetchPromise;
-      })
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }
