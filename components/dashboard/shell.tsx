@@ -59,14 +59,14 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'User Management', href: '/dashboard/doctor/users', icon: Activity },
   ],
   asha: [
-    { label: 'Dashboard', href: '/dashboard/asha', icon: Home },
-    { label: 'Profile', href: '/dashboard/asha/profile', icon: User },
-    { label: 'Home Visits', href: '/dashboard/asha/visits', icon: Activity },
-    { label: 'Health Surveys', href: '/dashboard/asha/surveys', icon: Activity },
-    { label: 'Vaccination Tracking', href: '/dashboard/asha/vaccinations', icon: Activity },
-    { label: 'Patient Registration', href: '/dashboard/asha/register', icon: Activity },
+    { label: 'Dashboard', href: '/dashboard/asha-worker', icon: Home },
+    { label: 'Profile', href: '/dashboard/asha-worker/profile', icon: User },
+    { label: 'Home Visits', href: '/dashboard/asha-worker/visits', icon: Activity },
+    { label: 'Health Surveys', href: '/dashboard/asha-worker/surveys', icon: Activity },
+    { label: 'Vaccination Tracking', href: '/dashboard/asha-worker/vaccinations', icon: Activity },
+    { label: 'Patient Registration', href: '/dashboard/asha-worker/register', icon: Activity },
     { label: 'Govt Schemes', href: '/dashboard/schemes', icon: ShieldCheck },
-    { label: 'Reports', href: '/dashboard/asha/reports', icon: Activity },
+    { label: 'Reports', href: '/dashboard/asha-worker/reports', icon: Activity },
   ],
   pharmacy: [
     { label: 'Dashboard', href: '/dashboard/pharmacy', icon: Home },
@@ -93,11 +93,11 @@ const roleLabels: Record<UserRole, string> = {
 };
 
 const roleProfileLabel: Record<UserRole, string> = {
-  patient: "Patient's Profile",
-  doctor: "Doctor's Profile",
-  asha: "ASHA Worker's Profile",
-  pharmacy: "Pharmacy's Profile",
-  delivery: "Delivery Partner's Profile",
+  patient: "View Patient Profile",
+  doctor: "View Doctor Profile",
+  asha: "View ASHA Worker Profile",
+  pharmacy: "View Pharmacy Profile",
+  delivery: "View Delivery Profile",
 };
 
 const initialNotificationsByRole: Record<UserRole, Array<{ id: string; title: string; message: string; time: string; unread: boolean }>> = {
@@ -128,7 +128,7 @@ const initialNotificationsByRole: Record<UserRole, Array<{ id: string; title: st
 const roleProfileRoute: Record<UserRole, string> = {
   patient: '/dashboard/patient/profile',
   doctor: '/dashboard/doctor/profile',
-  asha: '/dashboard/asha/profile',
+  asha: '/dashboard/asha-worker/profile',
   pharmacy: '/dashboard/pharmacy/profile',
   delivery: '/dashboard/delivery/profile',
 };
@@ -136,7 +136,7 @@ const roleProfileRoute: Record<UserRole, string> = {
 const roleSecondAction: Record<UserRole, { label: string; href: string }> = {
   patient: { label: 'Health Tracker', href: '/dashboard/patient/health' },
   doctor: { label: 'Analytics', href: '/dashboard/doctor/analytics' },
-  asha: { label: 'Reports', href: '/dashboard/asha/reports' },
+  asha: { label: 'Reports', href: '/dashboard/asha-worker/reports' },
   pharmacy: { label: 'Inventory', href: '/dashboard/pharmacy/inventory' },
   delivery: { label: 'Earnings', href: '/dashboard/delivery/earnings' },
 };

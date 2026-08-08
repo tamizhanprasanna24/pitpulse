@@ -283,8 +283,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
         })();
       } else {
-        // Only clear if no local demo profile active
+        // Clear all state and local storage when session ends
         setSession(null);
+        setUser(null);
+        setProfile(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(LOCAL_STORAGE_PROFILE_KEY);
+        }
         setLoading(false);
       }
     });
@@ -466,6 +471,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(LOCAL_STORAGE_PROFILE_KEY);
+      localStorage.removeItem(LOCAL_STORAGE_OTP_KEY);
     }
     toast.info('You have signed out');
   };
@@ -505,7 +511,7 @@ export function useAuth() {
 export function getDashboardRoute(role: UserRole | undefined | null): string {
   switch (role) {
     case 'patient': return '/dashboard/patient';
-    case 'asha': return '/dashboard/asha';
+    case 'asha': return '/dashboard/asha-worker';
     case 'doctor': return '/dashboard/doctor';
     case 'pharmacy': return '/dashboard/pharmacy';
     case 'delivery': return '/dashboard/delivery';
