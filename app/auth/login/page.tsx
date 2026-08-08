@@ -91,16 +91,37 @@ export default function LoginPage() {
     setSubmitting(true);
     otpPending.current = true;
 
-    const { error } = await signIn(email, password);
-    if (error) {
-      // If password sign-in returns error, try sending OTP directly
+    // Call Supabase auth directly to control the flow and avoid OTP triggering on success
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+    
+    if (!error && authData?.user) {
+      // 1. Immediately query the database profiles table to get the logged-in user's role
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', authData.user.id)
+        .single();
+        
+      toast.success('Signed in successfully!');
+      
+      // 2. Use a router switch case to redirect to the exact dashboard matching that role string
+      switch(profileData?.role) {
+        case 'doctor': router.push('/dashboard/doctor'); break;
+        case 'patient': router.push('/dashboard/patient'); break;
+        case 'asha':
+        case 'asha worker': router.push('/dashboard/asha-worker'); break;
+        case 'pharmacy': router.push('/dashboard/pharmacy'); break;
+        case 'delivery': router.push('/dashboard/delivery'); break;
+        default: router.push('/dashboard/patient');
+      }
+      return; // Do NOT trigger OTP
+    } else {
       console.warn('Password auth notice, proceeding with Email OTP:', error);
-    }
-
-    const success = await triggerOtpSend(email);
-    setSubmitting(false);
-    if (!success) {
-      otpPending.current = false;
+      const success = await triggerOtpSend(email);
+      setSubmitting(false);
+      if (!success) {
+        otpPending.current = false;
+      }
     }
   };
 
@@ -136,13 +157,25 @@ export default function LoginPage() {
     toast.success('Authentication verified successfully!');
 
     if (profile) {
-      router.push(getDashboardRoute(profile.role));
+      switch(profile.role) {
+        case 'doctor': router.push('/dashboard/doctor'); break;
+        case 'patient': router.push('/dashboard/patient'); break;
+        case 'asha':
+        case 'asha worker': router.push('/dashboard/asha-worker'); break;
+        case 'pharmacy': router.push('/dashboard/pharmacy'); break;
+        case 'delivery': router.push('/dashboard/delivery'); break;
+        default: router.push('/dashboard/patient');
+      }
     } else {
-      const { data } = await supabase.from('profiles').select('*').eq('id', user?.id ?? '').maybeSingle();
-      if (data) {
-        router.push(getDashboardRoute((data as { role: UserRole }).role));
-      } else {
-        router.push('/dashboard/patient');
+      const { data } = await supabase.from('profiles').select('role').eq('id', user?.id ?? '').single();
+      switch(data?.role) {
+        case 'doctor': router.push('/dashboard/doctor'); break;
+        case 'patient': router.push('/dashboard/patient'); break;
+        case 'asha':
+        case 'asha worker': router.push('/dashboard/asha-worker'); break;
+        case 'pharmacy': router.push('/dashboard/pharmacy'); break;
+        case 'delivery': router.push('/dashboard/delivery'); break;
+        default: router.push('/dashboard/patient');
       }
     }
     setSubmitting(false);
