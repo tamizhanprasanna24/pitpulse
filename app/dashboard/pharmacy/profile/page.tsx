@@ -1,5 +1,8 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import * as React from 'react';
 import { useAuth } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
