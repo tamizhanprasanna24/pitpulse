@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/context/auth-context';
+import Image from 'next/image';
 import {
   Activity, Menu, X, Moon, Sun, LogOut, Bell, Search,
   ChevronRight, Home,
@@ -107,9 +108,9 @@ export function DashboardShell({ children, title, description }: DashboardShellP
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
-      <Link href="/" className="flex items-center gap-2 px-4 py-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg">
-          <Activity className="h-6 w-6 text-white" />
+      <Link href="/" className="flex items-center gap-2.5 px-4 py-4">
+        <div className="relative flex h-10 w-10 overflow-hidden rounded-xl shadow-lg ring-1 ring-primary/20">
+          <Image src="/logo.png" alt="Pit Pulse Logo" width={40} height={40} className="h-full w-full object-cover" />
         </div>
         <div>
           <span className="text-lg font-bold">Pit Pulse</span>

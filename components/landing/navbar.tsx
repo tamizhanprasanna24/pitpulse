@@ -2,8 +2,9 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Activity, Menu, X, Moon, Sun } from 'lucide-react';
+import { Menu, X, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -39,9 +40,9 @@ export function Navbar() {
       )}
     >
       <nav className="container mx-auto flex items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg">
-            <Activity className="h-6 w-6 text-white" />
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="relative flex h-10 w-10 overflow-hidden rounded-xl shadow-lg ring-1 ring-primary/20">
+            <Image src="/logo.png" alt="Pit Pulse Logo" width={40} height={40} className="h-full w-full object-cover" />
           </div>
           <span className="text-xl font-bold tracking-tight">
             Pit<span className="gradient-text">Pulse</span>
@@ -88,9 +89,9 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72">
               <div className="flex flex-col gap-4 pt-8">
-                <Link href="/" className="flex items-center gap-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent">
-                    <Activity className="h-6 w-6 text-white" />
+                <Link href="/" className="flex items-center gap-2.5">
+                  <div className="relative flex h-10 w-10 overflow-hidden rounded-xl shadow-lg">
+                    <Image src="/logo.png" alt="Pit Pulse Logo" width={40} height={40} className="h-full w-full object-cover" />
                   </div>
                   <span className="text-xl font-bold">Pit Pulse</span>
                 </Link>
@@ -118,7 +119,7 @@ export function Navbar() {
                     </Link>
                   </SheetClose>
                 </div>
-                </div>
+              </div>
             </SheetContent>
           </Sheet>
         </div>

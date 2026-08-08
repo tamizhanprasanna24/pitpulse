@@ -6,6 +6,7 @@ import { AuthProvider } from '@/context/auth-context';
 import { Toaster } from '@/components/ui/sonner';
 import { ServiceWorkerRegister } from '@/components/pwa/sw-register';
 import { PWAInstallPrompt } from '@/components/pwa/pwa-install-prompt';
+import { SplashScreen } from '@/components/pwa/splash-screen';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const jakarta = Plus_Jakarta_Sans({
@@ -26,9 +27,9 @@ export const metadata: Metadata = {
     title: 'Pit Pulse Healthcare',
   },
   icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-    apple: '/icon.svg',
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
   },
   openGraph: {
     title: 'Pit Pulse - Smart Healthcare Management System',
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${jakarta.variable} font-sans antialiased selection:bg-primary/20`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
+            <SplashScreen />
             {children}
             <Toaster position="top-right" richColors />
             <ServiceWorkerRegister />

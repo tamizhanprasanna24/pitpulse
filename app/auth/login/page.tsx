@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth, getDashboardRoute } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
@@ -164,9 +165,9 @@ export default function LoginPage() {
       <div className="w-full max-w-lg space-y-6">
         {/* Header Logo */}
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent shadow-lg">
-              <Activity className="h-7 w-7 text-white" />
+          <Link href="/" className="inline-flex items-center gap-2.5">
+            <div className="relative flex h-12 w-12 overflow-hidden rounded-xl shadow-lg ring-1 ring-primary/20">
+              <Image src="/logo.png" alt="Pit Pulse Logo" width={48} height={48} className="h-full w-full object-cover" />
             </div>
             <span className="text-2xl font-bold tracking-tight">Pit Pulse</span>
           </Link>
