@@ -93,11 +93,36 @@ const roleLabels: Record<UserRole, string> = {
 };
 
 const roleProfileLabel: Record<UserRole, string> = {
-  patient: 'View Profile',
-  doctor: 'View Profile',
-  asha: 'View Profile',
-  pharmacy: 'View Profile',
-  delivery: 'View Profile',
+  patient: "Patient's Profile",
+  doctor: "Doctor's Profile",
+  asha: "ASHA Worker's Profile",
+  pharmacy: "Pharmacy's Profile",
+  delivery: "Delivery Partner's Profile",
+};
+
+const initialNotificationsByRole: Record<UserRole, Array<{ id: string; title: string; message: string; time: string; unread: boolean }>> = {
+  patient: [
+    { id: 'n1', title: '🚨 Emergency SOS System Active', message: 'GPS emergency tracking & dispatch services are operational.', time: '10m ago', unread: true },
+    { id: 'n2', title: '💊 Medicine Order Out for Delivery', message: 'Order #ORD-8821 is being delivered by Vikram Singh.', time: '45m ago', unread: true },
+    { id: 'n3', title: '🩺 Appointment Confirmed', message: 'Consultation with Dr. Rajesh Verma confirmed for tomorrow.', time: '2h ago', unread: true },
+  ],
+  doctor: [
+    { id: 'd1', title: '📅 New Consult Request', message: 'Suresh Kumar requested an online consultation.', time: '5m ago', unread: true },
+    { id: 'd2', title: '🚨 Emergency Case Assigned', message: 'New trauma case reported at Village Clinic.', time: '15m ago', unread: true },
+    { id: 'd3', title: '📊 Lab Report Ready', message: 'Blood test results for Priya Sharma are available.', time: '1h ago', unread: true },
+  ],
+  asha: [
+    { id: 'a1', title: '📋 Survey Task Assigned', message: 'Weekly health survey pending for Ward 4.', time: '30m ago', unread: true },
+    { id: 'a2', title: '💉 Vaccination Drive', message: 'Polio drops campaign starts tomorrow at 8 AM.', time: '2h ago', unread: true },
+  ],
+  pharmacy: [
+    { id: 'p1', title: '📦 New Prescription Received', message: 'Order #ORD-8822 waiting for fulfillment.', time: '12m ago', unread: true },
+    { id: 'p2', title: '⚠️ Low Stock Alert', message: 'Paracetamol 500mg is running low.', time: '3h ago', unread: true },
+  ],
+  delivery: [
+    { id: 'dl1', title: '🛵 New Delivery Assigned', message: 'Pickup medicine order from City Pharmacy.', time: '2m ago', unread: true },
+    { id: 'dl2', title: '💰 Payment Credited', message: '₹450 added to your wallet for today\'s deliveries.', time: '4h ago', unread: true },
+  ],
 };
 
 const roleProfileRoute: Record<UserRole, string> = {
@@ -129,32 +154,21 @@ export function DashboardShell({ children, title, description }: DashboardShellP
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
-  const [unreadCount, setUnreadCount] = React.useState(3);
-  const [notificationsList, setNotificationsList] = React.useState([
-    {
-      id: 'n1',
-      title: '🚨 Emergency SOS System Active',
-      message: 'GPS emergency tracking & dispatch services are operational.',
-      time: '10m ago',
-      unread: true,
-    },
-    {
-      id: 'n2',
-      title: '💊 Medicine Order Out for Delivery',
-      message: 'Order #ORD-8821 is being delivered by Vikram Singh.',
-      time: '45m ago',
-      unread: true,
-    },
-    {
-      id: 'n3',
-      title: '🩺 Appointment Confirmed',
-      message: 'Consultation with Dr. Rajesh Verma confirmed for tomorrow.',
-      time: '2h ago',
-      unread: true,
-    },
-  ]);
+  // Infer active role from current URL route path to guarantee 100% portal alignment across all screens
+  const pathParts = (pathname || '').split('/');
+  const routeRole = pathParts[2] as UserRole;
+  const validRoles: UserRole[] = ['patient', 'doctor', 'asha', 'pharmacy', 'delivery'];
+  const currentRole = (validRoles.includes(routeRole) ? routeRole : profile?.role || 'patient') as UserRole;
 
-  React.useEffect(() => setMounted(true), []);
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [notificationsList, setNotificationsList] = React.useState<Array<{ id: string; title: string; message: string; time: string; unread: boolean }>>([]);
+
+  React.useEffect(() => {
+    setMounted(true);
+    const notifications = initialNotificationsByRole[currentRole] || initialNotificationsByRole.patient;
+    setNotificationsList(notifications);
+    setUnreadCount(notifications.filter((n) => n.unread).length);
+  }, [currentRole]);
 
   const activeProfile = profile || {
     id: 'user-default',
@@ -162,12 +176,6 @@ export function DashboardShell({ children, title, description }: DashboardShellP
     role: 'patient' as UserRole,
     full_name: 'Pit Pulse User',
   };
-
-  // Infer active role from current URL route path to guarantee 100% portal alignment across all screens
-  const pathParts = (pathname || '').split('/');
-  const routeRole = pathParts[2] as UserRole;
-  const validRoles: UserRole[] = ['patient', 'doctor', 'asha', 'pharmacy', 'delivery'];
-  const currentRole = (validRoles.includes(routeRole) ? routeRole : profile?.role || 'patient') as UserRole;
 
   const navItems = navByRole[currentRole] || navByRole.patient;
   const roleLabel = roleLabels[currentRole] || roleLabels.patient;
@@ -358,7 +366,7 @@ export function DashboardShell({ children, title, description }: DashboardShellP
                 onClick={() => router.push(profileRoute)}
                 className="cursor-pointer font-medium"
               >
-                <User className="mr-2 h-4 w-4 text-primary" /> View Profile
+                <User className="mr-2 h-4 w-4 text-primary" /> {profileLabel}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push(secondAction.href)}
