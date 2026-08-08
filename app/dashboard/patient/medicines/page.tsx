@@ -43,9 +43,11 @@ export default function MedicinesPage() {
         const { data } = await supabase.from('medicines').select('*');
         if (data && data.length > 0) {
           setMedicines(data as Medicine[]);
+        } else {
+          setMedicines(SAMPLE_MEDICINES);
         }
       } catch {
-        // Fallback active
+        setMedicines(SAMPLE_MEDICINES);
       }
     })();
   }, []);
