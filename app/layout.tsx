@@ -1,5 +1,5 @@
 import './globals.css';
-import type { Metadata, Viewport } from 'next';
+import type { Metadata } from 'next';
 import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 import { ThemeProvider } from '@/context/theme-provider';
 import { AuthProvider } from '@/context/auth-context';
@@ -19,9 +19,10 @@ export const metadata: Metadata = {
     'Connecting Patients, Doctors, ASHA Workers, Pharmacies, and Delivery Partners through intelligent healthcare, emergency response, and real-time medicine delivery.',
   manifest: '/manifest.json',
   applicationName: 'Pit Pulse',
+  themeColor: '#0ea5e9',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'default',
     title: 'Pit Pulse Healthcare',
   },
   icons: {
@@ -35,17 +36,6 @@ export const metadata: Metadata = {
       'Connecting Patients, Doctors, ASHA Workers, Pharmacies, and Delivery Partners through intelligent healthcare, emergency response, and real-time medicine delivery.',
     type: 'website',
   },
-};
-
-export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#0ea5e9' },
-    { media: '(prefers-color-scheme: dark)', color: '#090d16' },
-  ],
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
 };
 
 export default function RootLayout({
