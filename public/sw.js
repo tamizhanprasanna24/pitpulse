@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v4';
 const STATIC_CACHE = `pitpulse-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pitpulse-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
@@ -7,8 +7,11 @@ const STATIC_ASSETS = [
   '/',
   '/offline.html',
   '/manifest.json',
-  '/icon.svg',
-  '/icon-maskable.svg',
+  '/logo.png',
+  '/icon.png',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-maskable.png',
   '/auth/login',
   '/auth/register',
   '/dashboard/patient',
@@ -117,8 +120,8 @@ self.addEventListener('push', (event) => {
     const title = data.title || 'Pit Pulse Health Alert';
     const options = {
       body: data.message || 'You have a new update in Pit Pulse.',
-      icon: '/icon.svg',
-      badge: '/icon.svg',
+      icon: '/logo.png',
+      badge: '/logo.png',
       data: { url: data.url || '/dashboard/patient' },
     };
 
@@ -128,7 +131,7 @@ self.addEventListener('push', (event) => {
     event.waitUntil(
       self.registration.showNotification('Pit Pulse Alert', {
         body: text,
-        icon: '/icon.svg',
+        icon: '/logo.png',
       })
     );
   }
