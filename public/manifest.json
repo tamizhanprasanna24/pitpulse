@@ -1,0 +1,55 @@
+{
+  "id": "/",
+  "name": "Pit Pulse - Smart Healthcare Management System",
+  "short_name": "Pit Pulse",
+  "description": "Connecting Patients, Doctors, ASHA Workers, Pharmacies, and Delivery Partners through smart healthcare, emergency SOS, and real-time medicine delivery.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#090d16",
+  "theme_color": "#0ea5e9",
+  "categories": ["health", "medical", "lifestyle", "productivity"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512 any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.svg",
+      "sizes": "192x192 512x512 any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Patient Dashboard",
+      "short_name": "Patient",
+      "url": "/dashboard/patient",
+      "description": "Open your personal health dashboard"
+    },
+    {
+      "name": "AI Health Assistant",
+      "short_name": "AI Assistant",
+      "url": "/dashboard/patient/ai-assistant",
+      "description": "Chat with 24/7 AI health assistant"
+    },
+    {
+      "name": "Doctor Portal",
+      "short_name": "Doctor",
+      "url": "/dashboard/doctor",
+      "description": "Manage doctor appointments and patients"
+    },
+    {
+      "name": "ASHA Worker Portal",
+      "short_name": "ASHA",
+      "url": "/dashboard/asha",
+      "description": "Village health visits and surveys"
+    }
+  ],
+  "prefer_related_applications": false
+}

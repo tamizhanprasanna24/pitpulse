@@ -1,0 +1,70 @@
+import './globals.css';
+import type { Metadata, Viewport } from 'next';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
+import { ThemeProvider } from '@/context/theme-provider';
+import { AuthProvider } from '@/context/auth-context';
+import { Toaster } from '@/components/ui/sonner';
+import { ServiceWorkerRegister } from '@/components/pwa/sw-register';
+import { PWAInstallPrompt } from '@/components/pwa/pwa-install-prompt';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-jakarta',
+});
+
+export const metadata: Metadata = {
+  title: 'Pit Pulse - Smart Healthcare Management System',
+  description:
+    'Connecting Patients, Doctors, ASHA Workers, Pharmacies, and Delivery Partners through intelligent healthcare, emergency response, and real-time medicine delivery.',
+  manifest: '/manifest.json',
+  applicationName: 'Pit Pulse',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Pit Pulse Healthcare',
+  },
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
+  openGraph: {
+    title: 'Pit Pulse - Smart Healthcare Management System',
+    description:
+      'Connecting Patients, Doctors, ASHA Workers, Pharmacies, and Delivery Partners through intelligent healthcare, emergency response, and real-time medicine delivery.',
+    type: 'website',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#0ea5e9' },
+    { media: '(prefers-color-scheme: dark)', color: '#090d16' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} ${jakarta.variable} font-sans antialiased selection:bg-primary/20`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AuthProvider>
+            {children}
+            <Toaster position="top-right" richColors />
+            <ServiceWorkerRegister />
+            <PWAInstallPrompt />
+          </AuthProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
