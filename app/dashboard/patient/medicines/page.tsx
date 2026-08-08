@@ -1,5 +1,8 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/auth-context';
@@ -8,11 +11,11 @@ import { SAMPLE_MEDICINES } from '@/lib/medicine-catalog';
 import type { Medicine, Pharmacy, CartItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Pill, ShoppingCart, Plus, Minus, MapPin, Star, Clock, AlertTriangle, FileText, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { formatCurrency, haversineDistance } from '@/lib/health-utils';
+import { Search, Pill, ShoppingCart, Plus, Minus, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { formatCurrency } from '@/lib/health-utils';
 import { toast } from 'sonner';
 
 export default function MedicinesPage() {
@@ -23,7 +26,6 @@ export default function MedicinesPage() {
   const [category, setCategory] = React.useState('all');
   const [rxFilter, setRxFilter] = React.useState<'all' | 'otc' | 'rx'>('all');
   const [cart, setCart] = React.useState<CartItem[]>([]);
-  const [loading, setLoading] = React.useState(true);
   const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number } | null>(null);
 
   React.useEffect(() => {
@@ -33,12 +35,23 @@ export default function MedicinesPage() {
           supabase.from('medicines').select('*'),
           supabase.from('pharmacies').select('*'),
         ]);
-        if (meds.data && meds.data.length > 0) setMedicines(meds.data as Medicine[]);
-        if (pharms.data && pharms.data.length > 0) setPharmacies(pharms.data as Pharmacy[]);
+
+        if (meds.data && meds.data.length > 0) {
+          setMedicines(meds.data as Medicine[]);
+        } else {
+          // Auto-seed Supabase database if empty
+          try {
+            await supabase.from('medicines').upsert(SAMPLE_MEDICINES);
+          } catch {
+            // Keep SAMPLE_MEDICINES state
+          }
+        }
+
+        if (pharms.data && pharms.data.length > 0) {
+          setPharmacies(pharms.data as Pharmacy[]);
+        }
       } catch {
         // Fallback SAMPLE_MEDICINES active
-      } finally {
-        setLoading(false);
       }
     })();
 
@@ -76,8 +89,6 @@ export default function MedicinesPage() {
     });
   }, [activeMedicines, search, category, rxFilter]);
 
-  const getPharmacy = (id: string) => pharmacies.find((p) => p.id === id);
-
   const addToCart = (med: Medicine) => {
     setCart((prev) => {
       const existing = prev.find((c) => c.medicine_id === med.id);
@@ -112,8 +123,8 @@ export default function MedicinesPage() {
 
   const handleCheckout = () => {
     if (requiresRx) {
-      toast.info('Prescription Warning', {
-        description: 'Your cart contains prescription-only (Rx) medicines. Verification required during checkout.',
+      toast.info('Prescription Verification', {
+        description: 'Your cart contains prescription-only (Rx) medicines. Verified by pharmacy during dispatch.',
       });
     } else {
       toast.success('Order placed successfully! Delivery partner assigned.');
@@ -145,7 +156,7 @@ export default function MedicinesPage() {
                   <SelectContent>
                     {categories.map((cat) => (
                       <SelectItem key={cat} value={cat}>
-                        {cat === 'all' ? 'All Categories (40)' : cat}
+                        {cat === 'all' ? `All Categories (${activeMedicines.length})` : cat}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -161,7 +172,7 @@ export default function MedicinesPage() {
                   onClick={() => setRxFilter('all')}
                   className="h-7 text-xs rounded-full"
                 >
-                  All Medicines ({medicines.length})
+                  All Medicines ({activeMedicines.length})
                 </Button>
                 <Button
                   size="sm"
@@ -196,11 +207,11 @@ export default function MedicinesPage() {
                       </div>
                       {med.prescription_required ? (
                         <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px] shrink-0 font-bold">
-                          <AlertTriangle className="mr-1 h-3 w-3" /> Rx Required
+                          <AlertTriangle className="mr-1 h-3 w-3 inline" /> Rx Required
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] shrink-0 font-bold">
-                          <ShieldCheck className="mr-1 h-3 w-3" /> OTC
+                          <ShieldCheck className="mr-1 h-3 w-3 inline" /> OTC
                         </Badge>
                       )}
                     </div>
@@ -250,7 +261,7 @@ export default function MedicinesPage() {
             ) : (
               <div className="col-span-full p-8 text-center glass rounded-xl">
                 <Pill className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-                <p className="text-sm font-semibold text-muted-foreground">No medicines matched your criteria.</p>
+                <p className="text-sm font-semibold text-muted-foreground">No medicines matched your search filter.</p>
               </div>
             )}
           </div>
