@@ -1,0 +1,14 @@
+[
+  {
+    "id": "pharma-1",
+    "name": "Apollo Lifecare Pharmacy (24x7)",
+    "address": "Shop 12, Main Market Road, Rampur",
+    "latitude": 28.6160,
+    "longitude": 77.2110,
+    "phone": "+91 98765 55555",
+    "is_24x7": true,
+    "is_open": true,
+    "rating": 4.9,
+    "delivery_available": true
+  }
+]
