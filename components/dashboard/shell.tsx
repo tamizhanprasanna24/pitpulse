@@ -8,7 +8,7 @@ import { useAuth } from '@/context/auth-context';
 import Image from 'next/image';
 import {
   Activity, Menu, X, Moon, Sun, LogOut, Bell, Search,
-  ChevronRight, Home, CheckCheck, User, Settings,
+  ChevronRight, Home, CheckCheck, User, Settings, ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Nearby Care', href: '/dashboard/patient/maps', icon: Activity },
     { label: 'AI Assistant', href: '/dashboard/patient/ai-assistant', icon: Activity },
     { label: 'Pregnancy', href: '/dashboard/patient/pregnancy', icon: Activity },
+    { label: 'Govt Schemes', href: '/dashboard/schemes', icon: ShieldCheck },
   ],
   doctor: [
     { label: 'Dashboard', href: '/dashboard/doctor', icon: Home },
@@ -64,6 +65,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Health Surveys', href: '/dashboard/asha/surveys', icon: Activity },
     { label: 'Vaccination Tracking', href: '/dashboard/asha/vaccinations', icon: Activity },
     { label: 'Patient Registration', href: '/dashboard/asha/register', icon: Activity },
+    { label: 'Govt Schemes', href: '/dashboard/schemes', icon: ShieldCheck },
     { label: 'Reports', href: '/dashboard/asha/reports', icon: Activity },
   ],
   pharmacy: [
