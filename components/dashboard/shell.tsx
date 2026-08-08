@@ -8,13 +8,14 @@ import { useAuth } from '@/context/auth-context';
 import Image from 'next/image';
 import {
   Activity, Menu, X, Moon, Sun, LogOut, Bell, Search,
-  ChevronRight, Home,
+  ChevronRight, Home, CheckCheck, Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/health-utils';
 import type { UserRole } from '@/types';
@@ -89,6 +90,31 @@ export function DashboardShell({ children, title, description }: DashboardShellP
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
+  const [unreadCount, setUnreadCount] = React.useState(3);
+  const [notificationsList, setNotificationsList] = React.useState([
+    {
+      id: 'n1',
+      title: '🚨 Emergency SOS System Active',
+      message: 'GPS emergency tracking & dispatch services are operational.',
+      time: '10m ago',
+      unread: true,
+    },
+    {
+      id: 'n2',
+      title: '💊 Medicine Order Out for Delivery',
+      message: 'Order #ORD-8821 is being delivered by Vikram Singh.',
+      time: '45m ago',
+      unread: true,
+    },
+    {
+      id: 'n3',
+      title: '🩺 Appointment Confirmed',
+      message: 'Consultation with Dr. Rajesh Verma confirmed for tomorrow.',
+      time: '2h ago',
+      unread: true,
+    },
+  ]);
+
   React.useEffect(() => setMounted(true), []);
 
   const activeProfile = profile || {
@@ -104,6 +130,11 @@ export function DashboardShell({ children, title, description }: DashboardShellP
   const handleSignOut = async () => {
     await signOut();
     router.push('/');
+  };
+
+  const markAllRead = () => {
+    setUnreadCount(0);
+    setNotificationsList((prev) => prev.map((n) => ({ ...n, unread: false })));
   };
 
   const SidebarContent = () => (
@@ -127,7 +158,9 @@ export function DashboardShell({ children, title, description }: DashboardShellP
               href={item.href}
               className={cn(
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
-                isActive ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                isActive
+                  ? 'bg-primary text-primary-foreground shadow-md'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               )}
             >
               <item.icon className="h-4 w-4" />
@@ -188,15 +221,68 @@ export function DashboardShell({ children, title, description }: DashboardShellP
           </div>
 
           {mounted && (
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="rounded-full">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="rounded-full"
+            >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-destructive" />
-          </Button>
+          {/* Interactive Notifications Popover */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative rounded-full">
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-1 top-1 flex h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-0 shadow-2xl border-border/60">
+              <div className="flex items-center justify-between border-b border-border/50 p-3 bg-card/60 backdrop-blur">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-sm">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary">
+                      {unreadCount} new
+                    </Badge>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllRead}
+                    className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
+                  >
+                    <CheckCheck className="h-3 w-3" /> Mark read
+                  </button>
+                )}
+              </div>
+              <div className="max-h-80 overflow-y-auto divide-y divide-border/40">
+                {notificationsList.length > 0 ? (
+                  notificationsList.map((n) => (
+                    <div
+                      key={n.id}
+                      className={cn(
+                        'p-3 text-xs transition-colors hover:bg-muted/40',
+                        n.unread ? 'bg-primary/5' : ''
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <span className="font-semibold text-foreground">{n.title}</span>
+                        <span className="text-[10px] text-muted-foreground shrink-0">{n.time}</span>
+                      </div>
+                      <p className="text-muted-foreground mt-1 leading-snug">{n.message}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-center text-xs text-muted-foreground">No notifications yet</div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Avatar className="h-9 w-9">
             <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-xs">
@@ -205,15 +291,20 @@ export function DashboardShell({ children, title, description }: DashboardShellP
           </Avatar>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
       </div>
     </div>
   );
 }
 
-export function StatCard({ icon: Icon, label, value, unit, color, trend }: {
+export function StatCard({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  color,
+  trend,
+}: {
   icon: typeof Activity;
   label: string;
   value: string | number;
@@ -244,7 +335,11 @@ export function StatCard({ icon: Icon, label, value, unit, color, trend }: {
   );
 }
 
-export function SectionCard({ title, children, action }: {
+export function SectionCard({
+  title,
+  children,
+  action,
+}: {
   title: string;
   children: React.ReactNode;
   action?: React.ReactNode;
