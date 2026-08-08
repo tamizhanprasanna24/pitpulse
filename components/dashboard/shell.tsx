@@ -161,7 +161,12 @@ export function DashboardShell({ children, title, description }: DashboardShellP
     full_name: 'Pit Pulse User',
   };
 
-  const currentRole = activeProfile.role as UserRole;
+  // Infer active role from current URL route path to guarantee 100% portal alignment across all screens
+  const pathParts = (pathname || '').split('/');
+  const routeRole = pathParts[2] as UserRole;
+  const validRoles: UserRole[] = ['patient', 'doctor', 'asha', 'pharmacy', 'delivery'];
+  const currentRole = (validRoles.includes(routeRole) ? routeRole : profile?.role || 'patient') as UserRole;
+
   const navItems = navByRole[currentRole] || navByRole.patient;
   const roleLabel = roleLabels[currentRole] || roleLabels.patient;
   const profileLabel = roleProfileLabel[currentRole] || roleProfileLabel.patient;
