@@ -7,10 +7,28 @@ export function ServiceWorkerRegister() {
     if (typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator)) return;
 
-    const register = () => {
-      navigator.serviceWorker.register('/sw.js').catch((err) => {
-        console.error('Service worker registration failed:', err);
+    // Flush stale caches & unregister legacy workers once for v100 update
+    if (!localStorage.getItem('pitpulse_sw_v100_purged')) {
+      if ('caches' in window) {
+        caches.keys().then((keys) => {
+          Promise.all(keys.map((key) => caches.delete(key)));
+        });
+      }
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
       });
+      localStorage.setItem('pitpulse_sw_v100_purged', 'true');
+    }
+
+    const register = async () => {
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        reg.update();
+      } catch (err) {
+        console.error('Service worker registration failed:', err);
+      }
     };
 
     if (document.readyState === 'complete') {
