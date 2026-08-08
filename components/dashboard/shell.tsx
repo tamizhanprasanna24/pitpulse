@@ -91,11 +91,11 @@ const roleLabels: Record<UserRole, string> = {
 };
 
 const roleProfileLabel: Record<UserRole, string> = {
-  patient: 'View Patient Profile',
-  doctor: 'View Doctor Profile',
-  asha: 'View ASHA Worker Profile',
-  pharmacy: 'View Pharmacy Profile',
-  delivery: 'View Delivery Profile',
+  patient: 'View Profile',
+  doctor: 'View Profile',
+  asha: 'View Profile',
+  pharmacy: 'View Profile',
+  delivery: 'View Profile',
 };
 
 const roleProfileRoute: Record<UserRole, string> = {
