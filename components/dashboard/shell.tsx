@@ -50,6 +50,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   doctor: [
     { label: 'Dashboard', href: '/dashboard/doctor', icon: Home },
+    { label: 'Profile', href: '/dashboard/doctor/profile', icon: User },
     { label: 'Patients', href: '/dashboard/doctor/patients', icon: Activity },
     { label: 'Appointments', href: '/dashboard/doctor/appointments', icon: Activity },
     { label: 'Emergency Cases', href: '/dashboard/doctor/emergency', icon: Activity },
@@ -58,6 +59,7 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   asha: [
     { label: 'Dashboard', href: '/dashboard/asha', icon: Home },
+    { label: 'Profile', href: '/dashboard/asha/profile', icon: User },
     { label: 'Home Visits', href: '/dashboard/asha/visits', icon: Activity },
     { label: 'Health Surveys', href: '/dashboard/asha/surveys', icon: Activity },
     { label: 'Vaccination Tracking', href: '/dashboard/asha/vaccinations', icon: Activity },
@@ -66,12 +68,14 @@ const navByRole: Record<UserRole, NavItem[]> = {
   ],
   pharmacy: [
     { label: 'Dashboard', href: '/dashboard/pharmacy', icon: Home },
+    { label: 'Profile', href: '/dashboard/pharmacy/profile', icon: User },
     { label: 'Inventory', href: '/dashboard/pharmacy/inventory', icon: Activity },
     { label: 'Orders', href: '/dashboard/pharmacy/orders', icon: Activity },
     { label: 'Medicine Catalogue', href: '/dashboard/pharmacy/catalogue', icon: Activity },
   ],
   delivery: [
     { label: 'Dashboard', href: '/dashboard/delivery', icon: Home },
+    { label: 'Profile', href: '/dashboard/delivery/profile', icon: User },
     { label: 'Assigned Orders', href: '/dashboard/delivery/orders', icon: Activity },
     { label: 'Earnings', href: '/dashboard/delivery/earnings', icon: Activity },
     { label: 'Delivery History', href: '/dashboard/delivery/history', icon: Activity },
@@ -84,6 +88,30 @@ const roleLabels: Record<UserRole, string> = {
   asha: 'ASHA Worker Portal',
   pharmacy: 'Pharmacy Portal',
   delivery: 'Delivery Partner Portal',
+};
+
+const roleProfileLabel: Record<UserRole, string> = {
+  patient: 'View Patient Profile',
+  doctor: 'View Doctor Profile',
+  asha: 'View ASHA Worker Profile',
+  pharmacy: 'View Pharmacy Profile',
+  delivery: 'View Delivery Profile',
+};
+
+const roleProfileRoute: Record<UserRole, string> = {
+  patient: '/dashboard/patient/profile',
+  doctor: '/dashboard/doctor/profile',
+  asha: '/dashboard/asha/profile',
+  pharmacy: '/dashboard/pharmacy/profile',
+  delivery: '/dashboard/delivery/profile',
+};
+
+const roleSecondAction: Record<UserRole, { label: string; href: string }> = {
+  patient: { label: 'Health Tracker', href: '/dashboard/patient/health' },
+  doctor: { label: 'Analytics', href: '/dashboard/doctor/analytics' },
+  asha: { label: 'Reports', href: '/dashboard/asha/reports' },
+  pharmacy: { label: 'Inventory', href: '/dashboard/pharmacy/inventory' },
+  delivery: { label: 'Earnings', href: '/dashboard/delivery/earnings' },
 };
 
 interface DashboardShellProps {
@@ -133,8 +161,12 @@ export function DashboardShell({ children, title, description }: DashboardShellP
     full_name: 'Pit Pulse User',
   };
 
-  const navItems = navByRole[activeProfile.role] || navByRole.patient;
-  const roleLabel = roleLabels[activeProfile.role] || roleLabels.patient;
+  const currentRole = activeProfile.role as UserRole;
+  const navItems = navByRole[currentRole] || navByRole.patient;
+  const roleLabel = roleLabels[currentRole] || roleLabels.patient;
+  const profileLabel = roleProfileLabel[currentRole] || roleProfileLabel.patient;
+  const profileRoute = roleProfileRoute[currentRole] || roleProfileRoute.patient;
+  const secondAction = roleSecondAction[currentRole] || roleSecondAction.patient;
 
   const handleSignOut = async () => {
     await signOut();
@@ -181,7 +213,7 @@ export function DashboardShell({ children, title, description }: DashboardShellP
 
       <div className="border-t border-border p-3">
         <Link
-          href="/dashboard/patient/profile"
+          href={profileRoute}
           className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-secondary/80 group cursor-pointer"
         >
           <Avatar className="h-9 w-9">
@@ -296,7 +328,7 @@ export function DashboardShell({ children, title, description }: DashboardShellP
             </PopoverContent>
           </Popover>
 
-          {/* Interactive Profile Dropdown Menu */}
+          {/* Interactive Profile Dropdown Menu - DYNAMIC FOR ALL ROLES */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="rounded-full ring-2 ring-primary/30 hover:ring-primary focus:outline-none transition-all shadow-sm">
@@ -316,16 +348,16 @@ export function DashboardShell({ children, title, description }: DashboardShellP
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => router.push('/dashboard/patient/profile')}
+                onClick={() => router.push(profileRoute)}
                 className="cursor-pointer font-medium"
               >
-                <User className="mr-2 h-4 w-4 text-primary" /> View Patient Profile
+                <User className="mr-2 h-4 w-4 text-primary" /> {profileLabel}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => router.push('/dashboard/patient/health')}
+                onClick={() => router.push(secondAction.href)}
                 className="cursor-pointer"
               >
-                <Activity className="mr-2 h-4 w-4 text-accent" /> Health Tracker
+                <Activity className="mr-2 h-4 w-4 text-accent" /> {secondAction.label}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
