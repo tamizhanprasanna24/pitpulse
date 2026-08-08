@@ -6,183 +6,6 @@ import { supabase } from '@/lib/supabase';
 import type { Profile, UserRole } from '@/types';
 import { toast } from 'sonner';
 
-export const DEMO_PROFILES: Record<UserRole, Profile> = {
-  patient: {
-    id: 'demo-patient-id-12345',
-    email: 'patient@pitpulse.org',
-    role: 'patient',
-    full_name: 'Priya Sharma',
-    date_of_birth: '1995-05-15',
-    age: 31,
-    gender: 'female',
-    blood_group: 'O+',
-    mobile_number: '+91 98765 43210',
-    address: 'Flat 402, Green Valley Apartments, Rampur',
-    emergency_contact: '+91 98765 00000',
-    medical_history: 'Mild asthma, allergic to penicillin',
-    allergies: 'Penicillin',
-    chronic_diseases: 'Asthma',
-    current_medications: 'Salbutamol Inhaler (as needed)',
-    height: 162,
-    weight: 58,
-    bmi: 22.1,
-    profile_photo: null,
-    is_pregnant: true,
-    pregnancy_week: 24,
-    expected_delivery_date: '2026-11-20',
-    previous_pregnancies: 1,
-    maternal_health_history: 'Normal previous delivery, routine prenatal care',
-    assigned_village: null,
-    specialization: null,
-    license_number: null,
-    pharmacy_id: null,
-    vehicle_number: null,
-    vehicle_type: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  doctor: {
-    id: 'demo-doctor-id-12345',
-    email: 'doctor@pitpulse.org',
-    role: 'doctor',
-    full_name: 'Dr. Rajesh Verma',
-    date_of_birth: '1982-08-10',
-    age: 44,
-    gender: 'male',
-    blood_group: 'B+',
-    mobile_number: '+91 98765 11111',
-    address: 'City General Hospital, Civil Lines, Rampur',
-    emergency_contact: '+91 98765 22222',
-    medical_history: null,
-    allergies: null,
-    chronic_diseases: null,
-    current_medications: null,
-    height: 175,
-    weight: 72,
-    bmi: 23.5,
-    profile_photo: null,
-    is_pregnant: false,
-    pregnancy_week: null,
-    expected_delivery_date: null,
-    previous_pregnancies: 0,
-    maternal_health_history: null,
-    assigned_village: null,
-    specialization: 'General Physician & Cardiology Specialist',
-    license_number: 'MCI-884920-IND',
-    pharmacy_id: null,
-    vehicle_number: null,
-    vehicle_type: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  asha: {
-    id: 'demo-asha-id-12345',
-    email: 'asha@pitpulse.org',
-    role: 'asha',
-    full_name: 'Sunita Devi (ASHA Worker)',
-    date_of_birth: '1988-12-04',
-    age: 37,
-    gender: 'female',
-    blood_group: 'A+',
-    mobile_number: '+91 98765 33333',
-    address: 'Community Health Center, Rampur Village',
-    emergency_contact: '+91 98765 44444',
-    medical_history: null,
-    allergies: null,
-    chronic_diseases: null,
-    current_medications: null,
-    height: 158,
-    weight: 55,
-    bmi: 22.0,
-    profile_photo: null,
-    is_pregnant: false,
-    pregnancy_week: null,
-    expected_delivery_date: null,
-    previous_pregnancies: 2,
-    maternal_health_history: null,
-    assigned_village: 'Rampur Village & Nearby Hamlets',
-    specialization: null,
-    license_number: 'ASHA-V-9912',
-    pharmacy_id: null,
-    vehicle_number: null,
-    vehicle_type: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  pharmacy: {
-    id: 'demo-pharmacy-id-12345',
-    email: 'pharmacy@pitpulse.org',
-    role: 'pharmacy',
-    full_name: 'Apollo Lifecare Pharmacy (Manager: Anil Mehta)',
-    date_of_birth: '1980-03-22',
-    age: 46,
-    gender: 'male',
-    blood_group: 'AB+',
-    mobile_number: '+91 98765 55555',
-    address: 'Shop 12, Main Market Road, Rampur',
-    emergency_contact: '+91 98765 66666',
-    medical_history: null,
-    allergies: null,
-    chronic_diseases: null,
-    current_medications: null,
-    height: 170,
-    weight: 68,
-    bmi: 23.5,
-    profile_photo: null,
-    is_pregnant: false,
-    pregnancy_week: null,
-    expected_delivery_date: null,
-    previous_pregnancies: 0,
-    maternal_health_history: null,
-    assigned_village: null,
-    specialization: null,
-    license_number: 'PHARM-LICENSE-2024-88',
-    pharmacy_id: 'pharma-store-001',
-    vehicle_number: null,
-    vehicle_type: null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  delivery: {
-    id: 'demo-delivery-id-12345',
-    email: 'delivery@pitpulse.org',
-    role: 'delivery',
-    full_name: 'Vikram Singh (Express Delivery)',
-    date_of_birth: '1998-07-19',
-    age: 28,
-    gender: 'male',
-    blood_group: 'O-',
-    mobile_number: '+91 98765 77777',
-    address: 'Transport Hub, Rampur Sector 4',
-    emergency_contact: '+91 98765 88888',
-    medical_history: null,
-    allergies: null,
-    chronic_diseases: null,
-    current_medications: null,
-    height: 178,
-    weight: 74,
-    bmi: 23.4,
-    profile_photo: null,
-    is_pregnant: false,
-    pregnancy_week: null,
-    expected_delivery_date: null,
-    previous_pregnancies: 0,
-    maternal_health_history: null,
-    assigned_village: null,
-    specialization: null,
-    license_number: null,
-    pharmacy_id: null,
-    vehicle_number: 'UP-32-AB-9876',
-    vehicle_type: 'Motorcycle',
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-};
 
 interface AuthContextValue {
   user: User | null;
@@ -195,7 +18,7 @@ interface AuthContextValue {
   signUp: (email: string, password: string) => Promise<{ error: string | null; data: { user: User | null } | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
-  loginAsDemoUser: (role: UserRole) => void;
+
   setLocalProfile: (p: Profile) => void;
 }
 
@@ -307,11 +130,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const loginAsDemoUser = (role: UserRole) => {
-    const p = DEMO_PROFILES[role];
-    setLocalProfile(p);
-    toast.success(`Signed in as ${p.full_name} (${role.toUpperCase()})`);
-  };
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -319,17 +137,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       setSession(data.session);
       await fetchProfile(data.user.id);
-      return { error: null };
-    }
-
-    // Fallback match against known demo email or active local profile
-    const matchedDemoRole = (Object.keys(DEMO_PROFILES) as UserRole[]).find(
-      (r) => DEMO_PROFILES[r].email.toLowerCase() === email.toLowerCase()
-    );
-
-    if (matchedDemoRole) {
-      const demoProf = DEMO_PROFILES[matchedDemoRole];
-      setLocalProfile(demoProf);
       return { error: null };
     }
 
@@ -391,16 +198,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const record = currentOtps[email.toLowerCase()];
 
       if (record && record.code === token && record.expiresAt > Date.now()) {
-        // Code matched! Check demo or existing local profile
-        const matchedDemoRole = (Object.keys(DEMO_PROFILES) as UserRole[]).find(
-          (r) => DEMO_PROFILES[r].email.toLowerCase() === email.toLowerCase()
-        );
-
-        if (matchedDemoRole) {
-          setLocalProfile(DEMO_PROFILES[matchedDemoRole]);
-          return { error: null };
-        }
-
         // If existing profile matches email
         if (profile && profile.email.toLowerCase() === email.toLowerCase()) {
           return { error: null };
@@ -493,7 +290,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         refreshProfile,
-        loginAsDemoUser,
         setLocalProfile,
       }}
     >

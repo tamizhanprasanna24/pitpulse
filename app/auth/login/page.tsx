@@ -30,7 +30,7 @@ const portalTypes: { role: UserRole; name: string; icon: typeof Heart; label: st
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, sendOtp, verifyOtp, user, profile, loading, loginAsDemoUser } = useAuth();
+  const { signIn, sendOtp, verifyOtp, user, profile, loading } = useAuth();
 
   const [selectedRole, setSelectedRole] = React.useState<UserRole>('patient');
   const [authMode, setAuthMode] = React.useState<'credentials' | 'otp_only'>('credentials');
@@ -181,10 +181,6 @@ export default function LoginPage() {
     setSubmitting(false);
   };
 
-  const handleDemoClick = (role: UserRole) => {
-    loginAsDemoUser(role);
-    router.push(getDashboardRoute(role));
-  };
 
   const copyOtpToClipboard = () => {
     if (!latestCode) return;

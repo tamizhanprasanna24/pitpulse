@@ -7,8 +7,8 @@ export function ServiceWorkerRegister() {
     if (typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator)) return;
 
-    // Flush stale caches & unregister legacy workers once for v103 update
-    if (!localStorage.getItem('pitpulse_sw_v103_purged')) {
+    // Flush stale caches & unregister legacy workers once for v104 update
+    if (!localStorage.getItem('pitpulse_sw_v104_purged')) {
       if ('caches' in window) {
         caches.keys().then((keys) => {
           Promise.all(keys.map((key) => caches.delete(key)));
@@ -18,7 +18,7 @@ export function ServiceWorkerRegister() {
         for (const registration of registrations) {
           registration.unregister();
         }
-        localStorage.setItem('pitpulse_sw_v103_purged', 'true');
+        localStorage.setItem('pitpulse_sw_v104_purged', 'true');
         window.location.reload();
       });
     }

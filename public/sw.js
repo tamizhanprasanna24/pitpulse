@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v103';
+const CACHE_VERSION = 'v104';
 const STATIC_CACHE = `pitpulse-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pitpulse-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
