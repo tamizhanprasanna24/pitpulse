@@ -191,7 +191,7 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   sendOtp: (email: string) => Promise<{ error: string | null; code?: string }>;
-  verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
+  verifyOtp: (email: string, token: string, role?: UserRole) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null; data: { user: User | null } | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -366,7 +366,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null, code: generatedCode };
   };
 
-  const verifyOtp = async (email: string, token: string) => {
+  const verifyOtp = async (email: string, token: string, requestedRole?: UserRole) => {
     // 1. Try Supabase verification
     try {
       const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
@@ -401,11 +401,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { error: null };
         }
 
-        // Default to a verified patient profile for new email OTP verification
+        // Default to the requested role or patient for new email OTP verification
         const newVerifiedProfile: Profile = {
           id: 'user-' + Date.now(),
           email,
-          role: 'patient',
+          role: requestedRole || 'patient',
           full_name: email.split('@')[0],
           date_of_birth: null,
           age: null,

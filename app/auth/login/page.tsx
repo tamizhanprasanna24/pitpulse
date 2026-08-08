@@ -18,19 +18,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
-const demoAccounts: { role: UserRole; name: string; email: string; icon: typeof Heart; label: string }[] = [
-  { role: 'patient', name: 'Priya Sharma', email: 'patient@pitpulse.org', icon: Heart, label: 'Patient' },
-  { role: 'doctor', name: 'Dr. Rajesh Verma', email: 'doctor@pitpulse.org', icon: Stethoscope, label: 'Doctor' },
-  { role: 'asha', name: 'Sunita Devi', email: 'asha@pitpulse.org', icon: Users, label: 'ASHA Worker' },
-  { role: 'pharmacy', name: 'Apollo Pharmacy', email: 'pharmacy@pitpulse.org', icon: Pill, label: 'Pharmacy' },
-  { role: 'delivery', name: 'Vikram Singh', email: 'delivery@pitpulse.org', icon: Truck, label: 'Delivery' },
+const portalTypes: { role: UserRole; name: string; icon: typeof Heart; label: string }[] = [
+  { role: 'patient', name: 'Patient Portal', icon: Heart, label: 'Patient' },
+  { role: 'doctor', name: 'Doctor Portal', icon: Stethoscope, label: 'Doctor' },
+  { role: 'asha', name: 'ASHA Portal', icon: Users, label: 'ASHA Worker' },
+  { role: 'pharmacy', name: 'Pharmacy Portal', icon: Pill, label: 'Pharmacy' },
+  { role: 'delivery', name: 'Delivery Portal', icon: Truck, label: 'Delivery' },
 ];
 
 export default function LoginPage() {
   const router = useRouter();
   const { signIn, sendOtp, verifyOtp, user, profile, loading, loginAsDemoUser } = useAuth();
 
+  const [selectedRole, setSelectedRole] = React.useState<UserRole>('patient');
   const [authMode, setAuthMode] = React.useState<'credentials' | 'otp_only'>('credentials');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
@@ -122,7 +124,7 @@ export default function LoginPage() {
     if (otp.length !== 6) return;
 
     setSubmitting(true);
-    const { error } = await verifyOtp(email, otp);
+    const { error } = await verifyOtp(email, otp, selectedRole);
 
     if (error) {
       toast.error(error);
@@ -175,27 +177,32 @@ export default function LoginPage() {
         </div>
 
         {/* Quick Demo Login Cards */}
+        {/* Portal Selection Cards */}
         <Card className="border-primary/20 bg-primary/5 shadow-sm">
           <CardHeader className="py-3 px-4">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-primary">
-                <Sparkles className="h-4 w-4" /> Quick Demo Sign-In (1-Click Preview)
+                <Users className="h-4 w-4" /> Select Your Portal
               </span>
-              <span className="text-[10px] text-muted-foreground">Select any role to test</span>
             </div>
           </CardHeader>
           <CardContent className="px-4 pb-3">
             <div className="grid grid-cols-5 gap-1.5">
-              {demoAccounts.map((acc) => (
+              {portalTypes.map((portal) => (
                 <button
-                  key={acc.role}
+                  key={portal.role}
                   type="button"
-                  onClick={() => handleDemoClick(acc.role)}
-                  className="flex flex-col items-center gap-1 rounded-lg border border-border/60 bg-background/80 p-2 text-center transition-all hover:border-primary hover:bg-primary/10 hover:shadow-sm"
-                  title={`Log in as ${acc.name} (${acc.label})`}
+                  onClick={() => setSelectedRole(portal.role)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 rounded-lg border p-2 text-center transition-all hover:border-primary hover:shadow-sm",
+                    selectedRole === portal.role 
+                      ? "border-primary bg-primary/10 shadow-sm" 
+                      : "border-border/60 bg-background/80 hover:bg-primary/5"
+                  )}
+                  title={`Log in to ${portal.name}`}
                 >
-                  <acc.icon className="h-4 w-4 text-primary" />
-                  <span className="text-[11px] font-medium leading-none">{acc.label}</span>
+                  <portal.icon className={cn("h-4 w-4", selectedRole === portal.role ? "text-primary" : "text-muted-foreground")} />
+                  <span className={cn("text-[11px] font-medium leading-none mt-1", selectedRole === portal.role ? "text-primary" : "text-muted-foreground")}>{portal.label}</span>
                 </button>
               ))}
             </div>
@@ -207,8 +214,8 @@ export default function LoginPage() {
           <CardHeader className="space-y-1">
             {step === 'credentials' ? (
               <>
-                <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-                <CardDescription>Sign in to access your healthcare portal</CardDescription>
+                <CardTitle className="text-2xl font-bold">{portalTypes.find(p => p.role === selectedRole)?.name} Login</CardTitle>
+                <CardDescription>Sign in to access your {portalTypes.find(p => p.role === selectedRole)?.label} account</CardDescription>
               </>
             ) : (
               <>
