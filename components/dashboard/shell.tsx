@@ -356,7 +356,7 @@ export function DashboardShell({ children, title, description }: DashboardShellP
                 onClick={() => router.push(profileRoute)}
                 className="cursor-pointer font-medium"
               >
-                <User className="mr-2 h-4 w-4 text-primary" /> {profileLabel}
+                <User className="mr-2 h-4 w-4 text-primary" /> View Profile
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => router.push(secondAction.href)}

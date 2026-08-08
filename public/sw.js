@@ -1,9 +1,8 @@
-const CACHE_VERSION = 'v100';
+const CACHE_VERSION = 'v102';
 const STATIC_CACHE = `pitpulse-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `pitpulse-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline.html';
 
-// Only static files - NEVER cache dynamic dashboard HTML pages in static precache!
 const STATIC_ASSETS = [
   '/',
   '/offline.html',
