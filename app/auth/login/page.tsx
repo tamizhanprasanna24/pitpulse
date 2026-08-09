@@ -44,6 +44,9 @@ export default function LoginPage() {
       }
 
       toast.success('Signed in successfully!');
+      const targetRole = res.profile?.role || profile?.role || 'patient';
+      const destination = getDashboardRoute(targetRole);
+      router.push(destination);
     } catch (err: any) {
       toast.error(err?.message || 'Login failed. Please check your credentials.');
     } finally {

@@ -185,7 +185,7 @@ export function DashboardShell({ children, title, description }: DashboardShellP
 
   const handleSignOut = async () => {
     await signOut();
-    router.push('/');
+    router.push('/auth/login');
   };
 
   const markAllRead = () => {

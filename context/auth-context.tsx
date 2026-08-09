@@ -12,7 +12,7 @@ interface AuthContextValue {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null; profile?: Profile | null }>;
   sendOtp: (email: string) => Promise<{ error: string | null; code?: string }>;
   verifyOtp: (email: string, token: string, role?: UserRole) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null; data: { user: User | null } | null }>;
@@ -421,7 +421,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
         setUser(data.user);
         setSession(data.session);
         await fetchProfile(data.user.id);
-        return { error: null };
+        return { error: null, profile };
       }
     } catch {
       // ignore & proceed to database lookup
@@ -443,7 +443,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
           return { error: 'Invalid email or password.' };
         }
         setLocalProfile(p, password);
-        return { error: null };
+        return { error: null, profile: p };
       }
     } catch {
       // Fall back to local registry
@@ -459,7 +459,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
           return { error: 'Invalid email or password.' };
         }
         setLocalProfile(apiAccount.profile, password);
-        return { error: null };
+        return { error: null, profile: apiAccount.profile };
       }
     } catch {
       // ignore & check local registry
@@ -474,7 +474,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
         return { error: 'Invalid email or password.' };
       }
       setLocalProfile(existingAccount.profile, password);
-      return { error: null };
+      return { error: null, profile: existingAccount.profile };
     }
 
     // 5. Universal Failsafe for Registered Accounts across any device:
@@ -534,7 +534,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       }
 
       setLocalProfile(dynamicProfile, password);
-      return { error: null };
+      return { error: null, profile: dynamicProfile };
     }
 
     return { error: 'Account not registered. Please sign up first.' };
