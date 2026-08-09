@@ -384,7 +384,9 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     setUser({ id: p.id, email: p.email } as User);
     if (typeof window !== 'undefined') {
       localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(p));
-      saveUserToRegistry(p.email, password || 'password', p);
+      if (password) {
+        saveUserToRegistry(p.email, password, p);
+      }
     }
   };
 
@@ -413,14 +415,13 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       return { error: 'Invalid login credentials' };
     }
 
-    if (!password || password.length < 1) {
-      return { error: 'Please enter your password' };
+    // Security & Privacy: Verify password matches registered password strictly
+    if (!password || (existingAccount.password && existingAccount.password !== password)) {
+      return { error: 'Invalid login credentials' };
     }
 
-    // Update saved password to user's active password and log in
-    existingAccount.password = password;
-    saveUserToRegistry(normalizedEmail, password, existingAccount.profile);
-    setLocalProfile(existingAccount.profile, password);
+    // Load registered profile cleanly without modifying user data
+    setLocalProfile(existingAccount.profile);
     return { error: null };
   };
 
