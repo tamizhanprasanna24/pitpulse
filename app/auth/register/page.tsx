@@ -108,7 +108,7 @@ export default function RegisterPage() {
       medical_history: medicalHistory || null,
       allergies: allergies || null,
       chronic_diseases: chronicDiseases || null,
-      currentMedications: currentMedications || null,
+      current_medications: currentMedications || null,
       height: height ? Number(height) : null,
       weight: weight ? Number(weight) : null,
       bmi,
