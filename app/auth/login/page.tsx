@@ -36,20 +36,15 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      // 1. Authenticate with Supabase
-      const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        // Fallback login
-        const res = await signIn(email, password);
-        if (res.error) {
-          toast.error(res.error);
-          setSubmitting(false);
-          return;
-        }
+      const res = await signIn(email, password);
+      if (res.error) {
+        toast.error(res.error);
+        setSubmitting(false);
+        return;
       }
 
-      // Infer role or query profile
+      toast.success('Signed in successfully!');
+      
       const userRole = (email.includes('doc') || email.includes('doctor'))
         ? 'doctor'
         : (email.includes('asha'))
@@ -60,8 +55,6 @@ export default function LoginPage() {
         ? 'delivery'
         : 'patient';
 
-      toast.success('Signed in successfully!');
-      
       const routeMap: Record<string, string> = {
         doctor: '/dashboard/doctor',
         asha: '/dashboard/asha-worker',
