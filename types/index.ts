@@ -86,6 +86,12 @@ export interface Medicine {
   image_url: string | null;
   form?: string | null;
   manufacturer?: string | null;
+  strength?: string | null;
+  dosage_instructions?: string | null;
+  side_effects?: string | null;
+  contraindications?: string | null;
+  requires_prescription?: boolean;
+  in_stock?: boolean;
   created_at: string;
 }
 
