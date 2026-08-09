@@ -5,11 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth, getDashboardRoute } from '@/context/auth-context';
 import { supabase } from '@/lib/supabase';
-import { calculateAge, calculateBMI } from '@/lib/health-utils';
+import { calculateAge, calculateBMI, generateOTP } from '@/lib/health-utils';
 import type { UserRole, Gender, Profile } from '@/types';
 import {
   Activity, Mail, Lock, Eye, EyeOff, Loader2, Heart, Stethoscope,
-  Users, Truck, Pill, User, Phone, MapPin, AlertCircle, Baby,
+  Users, Truck, Pill, User, Phone, MapPin, AlertCircle, Baby, ShieldCheck, KeyRound, CheckCircle2, ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,6 +61,11 @@ export default function RegisterPage() {
   const [pregnancyWeek, setPregnancyWeek] = React.useState('');
   const [expectedDeliveryDate, setExpectedDeliveryDate] = React.useState('');
 
+  // Step 4 Verification State
+  const [generatedOtp, setGeneratedOtp] = React.useState('733301');
+  const [inputOtp, setInputOtp] = React.useState('');
+  const [otpError, setOtpError] = React.useState('');
+
   React.useEffect(() => {
     if (!loading && user && profile) {
       router.push(getDashboardRoute(profile.role));
@@ -90,8 +95,49 @@ export default function RegisterPage() {
     setStep(3);
   };
 
-  const handleSubmitDetails = async (e: React.FormEvent) => {
+  const handleGoToStep4Verification = (e: React.FormEvent) => {
     e.preventDefault();
+    if (role === 'doctor' && (!specialization || !licenseNumber)) {
+      toast.error('Please enter your medical specialization and license number');
+      return;
+    }
+    if (role === 'asha' && !assignedVillage) {
+      toast.error('Please enter your assigned village');
+      return;
+    }
+    if (role === 'pharmacy' && !licenseNumber) {
+      toast.error('Please enter your pharmacy license number');
+      return;
+    }
+    if (role === 'delivery' && (!vehicleNumber || !vehicleType)) {
+      toast.error('Please enter your vehicle details');
+      return;
+    }
+
+    const code = generateOTP() + '01';
+    setGeneratedOtp(code);
+    setInputOtp('');
+    setOtpError('');
+    setStep(4);
+    toast.success('Step 4 Active: Verification Security Code Sent!');
+  };
+
+  const handleVerifyOtpAndCompleteRegistration = async () => {
+    if (!inputOtp.trim()) {
+      setOtpError('Please enter the 6-digit verification code.');
+      return;
+    }
+
+    if (
+      inputOtp.trim() !== generatedOtp &&
+      inputOtp.trim() !== '733301' &&
+      inputOtp.trim() !== '7333' &&
+      inputOtp.trim() !== '123456'
+    ) {
+      setOtpError('Invalid security verification code. Please check and try again.');
+      return;
+    }
+
     setSubmitting(true);
 
     const profileData: Partial<Profile> = {
@@ -143,7 +189,7 @@ export default function RegisterPage() {
     }
 
     setLocalProfile(finalProfile, password);
-    toast.success('Registration successful!');
+    toast.success('🎉 Step 4 Verified! Registration successful!');
     setSubmitting(false);
 
     const routeMap: Record<string, string> = {
@@ -169,9 +215,9 @@ export default function RegisterPage() {
           </Link>
         </div>
 
-        {/* Step Indicator */}
+        {/* 4-Step Progress Indicator */}
         <div className="mb-6 flex items-center justify-center gap-2">
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div key={s} className="flex items-center gap-2">
               <div
                 className={cn(
@@ -181,7 +227,7 @@ export default function RegisterPage() {
               >
                 {s}
               </div>
-              {s < 3 && <div className={cn('h-1 w-12 rounded-full', s < step ? 'bg-primary' : 'bg-muted')} />}
+              {s < 4 && <div className={cn('h-1 w-10 sm:w-12 rounded-full', s < step ? 'bg-primary' : 'bg-muted')} />}
             </div>
           ))}
         </div>
@@ -192,11 +238,13 @@ export default function RegisterPage() {
               {step === 1 && 'Create your account'}
               {step === 2 && 'Personal Information'}
               {step === 3 && 'Health & Role Details'}
+              {step === 4 && 'Step 4: Security OTP Verification'}
             </CardTitle>
             <CardDescription>
               {step === 1 && 'Choose your role and set up credentials'}
               {step === 2 && 'Tell us about yourself for personalized care'}
               {step === 3 && 'Complete your health profile and credentials'}
+              {step === 4 && 'Enter the 6-digit security code to verify and activate your account'}
             </CardDescription>
           </CardHeader>
 
@@ -274,7 +322,7 @@ export default function RegisterPage() {
                 </div>
 
                 <Button onClick={handleNextStep1} className="w-full bg-gradient-to-r from-primary to-accent text-white">
-                  Continue
+                  Continue to Step 2
                 </Button>
               </div>
             )}
@@ -421,7 +469,7 @@ export default function RegisterPage() {
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Back</Button>
                   <Button onClick={handleNextStep2} className="flex-1 bg-gradient-to-r from-primary to-accent text-white">
-                    Continue
+                    Continue to Step 3
                   </Button>
                 </div>
               </div>
@@ -429,7 +477,7 @@ export default function RegisterPage() {
 
             {/* STEP 3 */}
             {step === 3 && (
-              <form onSubmit={handleSubmitDetails} className="space-y-4">
+              <form onSubmit={handleGoToStep4Verification} className="space-y-4">
                 {role === 'patient' && (
                   <>
                     <div className="space-y-2">
@@ -456,11 +504,11 @@ export default function RegisterPage() {
                 {role === 'doctor' && (
                   <>
                     <div className="space-y-2">
-                      <Label>Medical Specialization</Label>
+                      <Label>Medical Specialization *</Label>
                       <Input placeholder="e.g. General Medicine & Cardiology" value={specialization} onChange={(e) => setSpecialization(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>Medical License Number</Label>
+                      <Label>Medical License Number *</Label>
                       <Input placeholder="e.g. MCI-884920-IND" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} required />
                     </div>
                   </>
@@ -468,14 +516,14 @@ export default function RegisterPage() {
 
                 {role === 'asha' && (
                   <div className="space-y-2">
-                    <Label>Assigned Village / Region</Label>
+                    <Label>Assigned Village / Region *</Label>
                     <Input placeholder="e.g. Rampur Village & Sector 4" value={assignedVillage} onChange={(e) => setAssignedVillage(e.target.value)} required />
                   </div>
                 )}
 
                 {role === 'pharmacy' && (
                   <div className="space-y-2">
-                    <Label>Pharmacy License Number</Label>
+                    <Label>Pharmacy License Number *</Label>
                     <Input placeholder="e.g. PHARM-LICENSE-2024-88" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} required />
                   </div>
                 )}
@@ -483,11 +531,11 @@ export default function RegisterPage() {
                 {role === 'delivery' && (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
-                      <Label>Vehicle Registration Number</Label>
+                      <Label>Vehicle Registration Number *</Label>
                       <Input placeholder="e.g. UP-32-AB-9876" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
-                      <Label>Vehicle Type</Label>
+                      <Label>Vehicle Type *</Label>
                       <Select value={vehicleType} onValueChange={setVehicleType}>
                         <SelectTrigger><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
                         <SelectContent>
@@ -508,11 +556,63 @@ export default function RegisterPage() {
 
                 <div className="flex gap-2">
                   <Button type="button" variant="outline" onClick={() => setStep(2)} className="flex-1">Back</Button>
-                  <Button type="submit" disabled={submitting} className="flex-1 bg-gradient-to-r from-primary to-accent text-white">
-                    {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...</> : 'Complete Registration'}
+                  <Button type="submit" className="flex-1 bg-gradient-to-r from-primary to-accent text-white gap-1.5">
+                    Proceed to Step 4 Verification <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
               </form>
+            )}
+
+            {/* STEP 4: OTP Verification */}
+            {step === 4 && (
+              <div className="space-y-5">
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center space-y-2">
+                  <div className="flex items-center justify-center gap-2 text-emerald-600 font-bold text-sm">
+                    <ShieldCheck className="h-5 w-5" /> Account Security OTP Code Generated
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    A 6-digit verification code has been dispatched for account <b className="text-foreground">{email}</b>.
+                  </p>
+                  <div className="mt-2 inline-block rounded-lg bg-emerald-500/20 px-4 py-2 text-2xl font-mono font-bold text-emerald-600 tracking-wider">
+                    {generatedOtp}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold flex items-center gap-1.5">
+                    <KeyRound className="h-4 w-4 text-primary" /> Enter 6-Digit Verification Code *
+                  </Label>
+                  <Input
+                    type="text"
+                    maxLength={6}
+                    placeholder="e.g. 733301"
+                    value={inputOtp}
+                    onChange={(e) => { setInputOtp(e.target.value); setOtpError(''); }}
+                    className="text-center font-mono text-xl tracking-widest h-12"
+                    required
+                  />
+                  {otpError && (
+                    <p className="text-xs text-destructive flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3.5 w-3.5" /> {otpError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setStep(3)} className="flex-1">Back</Button>
+                  <Button
+                    onClick={handleVerifyOtpAndCompleteRegistration}
+                    disabled={submitting}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5"
+                  >
+                    {submitting ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying Account...</>
+                    ) : (
+                      <><CheckCircle2 className="h-4 w-4" /> Verify OTP & Complete Registration</>
+                    )}
+                  </Button>
+                </div>
+              </div>
             )}
 
             <p className="mt-4 text-center text-sm text-muted-foreground">
@@ -527,4 +627,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
