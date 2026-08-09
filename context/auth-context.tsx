@@ -19,7 +19,7 @@ interface AuthContextValue {
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 
-  setLocalProfile: (p: Profile) => void;
+  setLocalProfile: (p: Profile, password?: string) => void;
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
@@ -122,53 +122,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [fetchProfile]);
 
-  const setLocalProfile = (p: Profile) => {
-    setProfile(p);
-    setUser({ id: p.id, email: p.email } as User);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(p));
-    }
-  };
+const LOCAL_STORAGE_USERS_KEY = 'pitpulse_registered_users';
 
-
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (!error && data?.user) {
-        setUser(data.user);
-        setSession(data.session);
-        await fetchProfile(data.user.id);
-        return { error: null };
-      }
-    } catch {
-      // ignore & proceed to fallback local session
-    }
-
-    // Determine user role from email pattern
-    const userRole: UserRole = (email.includes('doc') || email.includes('doctor'))
-      ? 'doctor'
-      : (email.includes('asha'))
-      ? 'asha'
-      : (email.includes('pharma') || email.includes('pharmacy'))
-      ? 'pharmacy'
-      : (email.includes('delivery'))
-      ? 'delivery'
-      : 'patient';
-
-    const cleanName = email.split('@')[0].replace(/[._-]/g, ' ');
-    const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-    const fallbackProfile: Profile = {
-      id: 'usr-' + Date.now(),
-      email,
-      role: userRole,
-      full_name: formattedName,
-      date_of_birth: null,
-      age: 30,
-      gender: 'male',
-      blood_group: 'O+',
+const DEFAULT_ACCOUNTS: Record<string, { password: string; profile: Profile }> = {
+  'ashaworker3@gmail.com': {
+    password: 'password',
+    profile: {
+      id: 'usr-asha-3',
+      email: 'ashaworker3@gmail.com',
+      role: 'asha',
+      full_name: 'Ashaworker3',
+      date_of_birth: '1992-05-15',
+      age: 32,
+      gender: 'female',
+      blood_group: 'B+',
       mobile_number: '+91 98765 43210',
-      address: 'Sector 4, Main Road',
+      address: 'Rampur Village, Sector 4',
+      emergency_contact: '+91 98765 00000',
+      medical_history: null,
+      allergies: null,
+      chronic_diseases: null,
+      current_medications: null,
+      height: null,
+      weight: null,
+      bmi: null,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: 'Rampur Village',
+      specialization: null,
+      license_number: null,
+      pharmacy_id: null,
+      vehicle_number: null,
+      vehicle_type: null,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
+  'doctor@gmail.com': {
+    password: 'password',
+    profile: {
+      id: 'usr-doc-1',
+      email: 'doctor@gmail.com',
+      role: 'doctor',
+      full_name: 'Dr. Ananya Sharma',
+      date_of_birth: '1985-08-20',
+      age: 39,
+      gender: 'female',
+      blood_group: 'A+',
+      mobile_number: '+91 98765 11111',
+      address: 'District Hospital, Sector 2',
       emergency_contact: null,
       medical_history: null,
       allergies: null,
@@ -183,18 +190,196 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       expected_delivery_date: null,
       previous_pregnancies: 0,
       maternal_health_history: null,
-      assigned_village: userRole === 'asha' ? 'Rampur Village' : null,
-      specialization: userRole === 'doctor' ? 'General Medicine' : null,
-      license_number: userRole === 'doctor' || userRole === 'pharmacy' ? 'LIC-884920' : null,
+      assigned_village: null,
+      specialization: 'General Medicine & Cardiology',
+      license_number: 'MCI-884920-IND',
       pharmacy_id: null,
-      vehicle_number: userRole === 'delivery' ? 'UP-32-AB-1234' : null,
-      vehicle_type: userRole === 'delivery' ? 'bike' : null,
+      vehicle_number: null,
+      vehicle_type: null,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    };
+    },
+  },
+  'patient@gmail.com': {
+    password: 'password',
+    profile: {
+      id: 'usr-pat-1',
+      email: 'patient@gmail.com',
+      role: 'patient',
+      full_name: 'Priya Sharma',
+      date_of_birth: '1996-03-10',
+      age: 28,
+      gender: 'female',
+      blood_group: 'O+',
+      mobile_number: '+91 98765 22222',
+      address: 'House 42, Green Avenue',
+      emergency_contact: '+91 98765 33333',
+      medical_history: 'None',
+      allergies: 'Penicillin',
+      chronic_diseases: 'Asthma',
+      current_medications: 'Inhaler',
+      height: 165,
+      weight: 60,
+      bmi: 22,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: null,
+      specialization: null,
+      license_number: null,
+      pharmacy_id: null,
+      vehicle_number: null,
+      vehicle_type: null,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
+  'pharmacy@gmail.com': {
+    password: 'password',
+    profile: {
+      id: 'usr-pharma-1',
+      email: 'pharmacy@gmail.com',
+      role: 'pharmacy',
+      full_name: 'City Meds Pharmacy',
+      date_of_birth: null,
+      age: null,
+      gender: 'male',
+      blood_group: null,
+      mobile_number: '+91 98765 44444',
+      address: 'Central Market, Sector 1',
+      emergency_contact: null,
+      medical_history: null,
+      allergies: null,
+      chronic_diseases: null,
+      current_medications: null,
+      height: null,
+      weight: null,
+      bmi: null,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: null,
+      specialization: null,
+      license_number: 'PHARM-LICENSE-2024-88',
+      pharmacy_id: 'pharma-1',
+      vehicle_number: null,
+      vehicle_type: null,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
+  'delivery@gmail.com': {
+    password: 'password',
+    profile: {
+      id: 'usr-deliv-1',
+      email: 'delivery@gmail.com',
+      role: 'delivery',
+      full_name: 'Rajesh Kumar',
+      date_of_birth: '1998-11-05',
+      age: 26,
+      gender: 'male',
+      blood_group: 'B+',
+      mobile_number: '+91 98765 55555',
+      address: 'Express Delivery Hub',
+      emergency_contact: null,
+      medical_history: null,
+      allergies: null,
+      chronic_diseases: null,
+      current_medications: null,
+      height: null,
+      weight: null,
+      bmi: null,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: null,
+      specialization: null,
+      license_number: null,
+      pharmacy_id: null,
+      vehicle_number: 'UP-32-AB-9876',
+      vehicle_type: 'bike',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
+};
 
-    setLocalProfile(fallbackProfile);
+function getStoredUsers(): Record<string, { password: string; profile: Profile }> {
+  if (typeof window === 'undefined') return DEFAULT_ACCOUNTS;
+  try {
+    const saved = localStorage.getItem(LOCAL_STORAGE_USERS_KEY);
+    if (saved) {
+      return { ...DEFAULT_ACCOUNTS, ...JSON.parse(saved) };
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_ACCOUNTS;
+}
+
+function saveUserToRegistry(email: string, password: string, profile: Profile) {
+  if (typeof window === 'undefined') return;
+  try {
+    const users = getStoredUsers();
+    users[email.toLowerCase()] = { password, profile };
+    localStorage.setItem(LOCAL_STORAGE_USERS_KEY, JSON.stringify(users));
+  } catch {
+    // ignore
+  }
+}
+
+  const setLocalProfile = (p: Profile, password?: string) => {
+    setProfile(p);
+    setUser({ id: p.id, email: p.email } as User);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(p));
+      saveUserToRegistry(p.email, password || 'password', p);
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // 1. Try Supabase Auth
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+      if (!error && data?.user) {
+        setUser(data.user);
+        setSession(data.session);
+        await fetchProfile(data.user.id);
+        return { error: null };
+      }
+    } catch {
+      // ignore & check local registry
+    }
+
+    // 2. Check local user registry
+    const registeredUsers = getStoredUsers();
+    const existingAccount = registeredUsers[normalizedEmail];
+
+    if (!existingAccount) {
+      return { error: 'Invalid login credentials. Account not found. Please register first.' };
+    }
+
+    if (existingAccount.password && existingAccount.password !== password) {
+      return { error: 'Invalid login credentials. Please check your password.' };
+    }
+
+    // Authentication successful
+    setLocalProfile(existingAccount.profile, password);
     return { error: null };
   };
 

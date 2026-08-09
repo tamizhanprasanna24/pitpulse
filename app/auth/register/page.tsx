@@ -142,7 +142,7 @@ export default function RegisterPage() {
       // ignore
     }
 
-    setLocalProfile(finalProfile);
+    setLocalProfile(finalProfile, password);
     toast.success('Registration successful!');
     setSubmitting(false);
 
