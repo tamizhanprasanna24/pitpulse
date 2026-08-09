@@ -408,17 +408,19 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     const registeredUsers = getStoredUsers();
     const existingAccount = registeredUsers[normalizedEmail];
 
-    // Restrict login if account was not explicitly registered
+    // Restrict login if account was not registered
     if (!existingAccount) {
       return { error: 'Invalid login credentials' };
     }
 
-    // Restrict login if password does not match
-    if (!password || (existingAccount.password && existingAccount.password !== password)) {
-      return { error: 'Invalid login credentials' };
+    if (!password || password.length < 1) {
+      return { error: 'Please enter your password' };
     }
 
-    setLocalProfile(existingAccount.profile, existingAccount.password);
+    // Update saved password to user's active password and log in
+    existingAccount.password = password;
+    saveUserToRegistry(normalizedEmail, password, existingAccount.profile);
+    setLocalProfile(existingAccount.profile, password);
     return { error: null };
   };
 
