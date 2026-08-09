@@ -44,26 +44,6 @@ export default function LoginPage() {
       }
 
       toast.success('Signed in successfully!');
-      
-      const userRole = (email.includes('doc') || email.includes('doctor'))
-        ? 'doctor'
-        : (email.includes('asha'))
-        ? 'asha'
-        : (email.includes('pharma') || email.includes('pharmacy'))
-        ? 'pharmacy'
-        : (email.includes('delivery'))
-        ? 'delivery'
-        : 'patient';
-
-      const routeMap: Record<string, string> = {
-        doctor: '/dashboard/doctor',
-        asha: '/dashboard/asha-worker',
-        pharmacy: '/dashboard/pharmacy',
-        delivery: '/dashboard/delivery',
-        patient: '/dashboard/patient',
-      };
-
-      router.push(routeMap[userRole] || '/dashboard/patient');
     } catch (err: any) {
       toast.error(err?.message || 'Login failed. Please check your credentials.');
     } finally {
