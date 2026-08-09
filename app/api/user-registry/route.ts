@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 import type { Profile } from '@/types';
 
 // Global server memory store for cross-device accounts
@@ -42,6 +43,25 @@ const globalUserRegistry: Record<string, { password: string; profile: Profile }>
       updated_at: new Date().toISOString(),
     },
   },
+  'ratheeshe344@gmail.com': {
+    password: 'Ratheesh@123',
+    profile: {
+      id: 'usr-ratheesh-1',
+      email: 'ratheeshe344@gmail.com',
+      role: 'patient',
+      full_name: 'Ratheesh',
+      date_of_birth: '1995-04-12',
+      age: 29,
+      gender: 'male',
+      blood_group: 'O+',
+      mobile_number: '+91 98765 43210',
+      address: 'Main Street, Sector 4',
+      passcode: 'Ratheesh@123',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as Profile,
+  },
   'doctor@gmail.com': {
     password: 'password',
     profile: {
@@ -71,6 +91,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, user: account });
   }
 
+  try {
+    const { data: remoteProfile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (remoteProfile) {
+      const fetchedUser = {
+        password: remoteProfile.passcode || 'password',
+        profile: remoteProfile as Profile,
+      };
+      globalUserRegistry[email] = fetchedUser;
+      return NextResponse.json({ success: true, user: fetchedUser });
+    }
+  } catch {
+    // ignore
+  }
+
   return NextResponse.json({ success: false, message: 'User not found in global registry' });
 }
 
@@ -85,6 +124,12 @@ export async function POST(request: Request) {
 
     const normalizedEmail = email.trim().toLowerCase();
     globalUserRegistry[normalizedEmail] = { password: password || 'password', profile };
+
+    try {
+      await supabase.from('profiles').upsert(profile, { onConflict: 'email' });
+    } catch {
+      // ignore
+    }
 
     return NextResponse.json({ success: true, message: 'User registered in global server registry' });
   } catch (err: any) {
