@@ -157,7 +157,7 @@ export default function LoginPage() {
     toast.success('Authentication verified successfully!');
 
     if (profile) {
-      switch(profile.role) {
+      switch (profile.role as string) {
         case 'doctor': router.push('/dashboard/doctor'); break;
         case 'patient': router.push('/dashboard/patient'); break;
         case 'asha':
