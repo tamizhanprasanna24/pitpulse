@@ -114,25 +114,26 @@ export default function RegisterPage() {
       return;
     }
 
-    const code = generateOTP() + '01';
+    const code = generateOTP();
     setGeneratedOtp(code);
     setInputOtp('');
     setOtpError('');
     setStep(4);
-    toast.success('Step 4 Active: Verification Security Code Sent!');
+    toast.success('Step 4 Active: 6-Digit Verification Code Sent!');
   };
 
   const handleVerifyOtpAndCompleteRegistration = async () => {
-    if (!inputOtp.trim()) {
+    const userEntered = inputOtp.trim();
+    if (!userEntered) {
       setOtpError('Please enter the 6-digit verification code.');
       return;
     }
 
     if (
-      inputOtp.trim() !== generatedOtp &&
-      inputOtp.trim() !== '733301' &&
-      inputOtp.trim() !== '7333' &&
-      inputOtp.trim() !== '123456'
+      userEntered !== generatedOtp &&
+      userEntered !== '733301' &&
+      userEntered !== '7333' &&
+      userEntered !== '123456'
     ) {
       setOtpError('Invalid security verification code. Please check and try again.');
       return;
