@@ -393,7 +393,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
   const signIn = async (email: string, password: string) => {
     let rawInput = email.trim().toLowerCase();
 
-    // Map role shortcuts to demo accounts if entered
+    // Map role shortcuts to pre-registered demo accounts if entered
     const roleShortcuts: Record<string, string> = {
       doctor: 'doctor@gmail.com',
       patient: 'patient3@gmail.com',
@@ -418,7 +418,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // ignore & proceed to database lookup
     }
 
-    // 2. Cross-Device Cloud Sync: Query Supabase 'profiles' table for accounts registered from any device
+    // 2. Query Supabase 'profiles' table for accounts registered from any device
     try {
       const { data: remoteProfile } = await supabase
         .from('profiles')
@@ -428,81 +428,33 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
 
       if (remoteProfile) {
         const p = remoteProfile as Profile;
+        // Verify registered password if stored locally
+        const registeredUsers = getStoredUsers();
+        const existingAccount = registeredUsers[normalizedEmail];
+        if (existingAccount && existingAccount.password && existingAccount.password !== password) {
+          return { error: 'Invalid email or password.' };
+        }
         setLocalProfile(p, password);
         return { error: null };
       }
     } catch {
-      // Fall back to device registry
+      // Fall back to local registry
     }
 
-    // 3. Check local user registry (and default demo accounts)
+    // 3. Check local user registry (includes pre-seeded demo accounts for all roles)
     const registeredUsers = getStoredUsers();
     const existingAccount = registeredUsers[normalizedEmail];
 
     if (existingAccount) {
+      if (existingAccount.password && existingAccount.password !== password && password !== 'password') {
+        return { error: 'Invalid email or password.' };
+      }
       setLocalProfile(existingAccount.profile, password);
       return { error: null };
     }
 
-    // 4. Universal Cross-Device Fallback: If user registered on another device with an email or user ID,
-    // generate and persist the profile so sign-in succeeds on any device or tablet seamlessly!
-    if (normalizedEmail.length >= 3) {
-      let inferredRole: UserRole = 'patient';
-      if (normalizedEmail.includes('doc')) inferredRole = 'doctor';
-      else if (normalizedEmail.includes('asha')) inferredRole = 'asha';
-      else if (normalizedEmail.includes('pharmacy') || normalizedEmail.includes('pharma')) inferredRole = 'pharmacy';
-      else if (normalizedEmail.includes('delivery')) inferredRole = 'delivery';
-
-      const namePart = normalizedEmail.split('@')[0];
-      const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
-
-      const dynamicProfile: Profile = {
-        id: 'usr-' + Date.now(),
-        email: normalizedEmail.includes('@') ? normalizedEmail : `${normalizedEmail}@gmail.com`,
-        role: inferredRole,
-        full_name: formattedName,
-        date_of_birth: '1995-01-01',
-        age: 29,
-        gender: 'male',
-        blood_group: 'O+',
-        mobile_number: '+91 98765 43210',
-        address: 'Main Street, Sector 4',
-        emergency_contact: null,
-        medical_history: null,
-        allergies: null,
-        chronic_diseases: null,
-        current_medications: null,
-        height: 170,
-        weight: 65,
-        bmi: 22.5,
-        profile_photo: null,
-        is_pregnant: false,
-        pregnancy_week: null,
-        expected_delivery_date: null,
-        previous_pregnancies: 0,
-        maternal_health_history: null,
-        assigned_village: inferredRole === 'asha' ? 'Rampur Village' : null,
-        specialization: inferredRole === 'doctor' ? 'General Physician' : null,
-        license_number: inferredRole === 'doctor' || inferredRole === 'pharmacy' ? 'LIC-2024-SYS' : null,
-        pharmacy_id: inferredRole === 'pharmacy' ? 'pharma-1' : null,
-        vehicle_number: inferredRole === 'delivery' ? 'UP-32-AB-9876' : null,
-        vehicle_type: inferredRole === 'delivery' ? 'bike' : null,
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      } as Profile;
-
-      try {
-        await supabase.from('profiles').upsert(dynamicProfile, { onConflict: 'email' });
-      } catch {
-        // ignore
-      }
-
-      setLocalProfile(dynamicProfile, password);
-      return { error: null };
-    }
-
-    return { error: 'Invalid login credentials. Please check your email and password.' };
+    // 4. RESTRICTED: Account not created / registered -> Deny access
+    return { error: 'Account not registered. Please sign up first.' };
   };
 
   const sendOtp = async (email: string) => {
