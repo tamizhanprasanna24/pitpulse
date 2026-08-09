@@ -84,6 +84,8 @@ export interface Medicine {
   category: string | null;
   description: string | null;
   image_url: string | null;
+  form?: string | null;
+  manufacturer?: string | null;
   created_at: string;
 }
 
