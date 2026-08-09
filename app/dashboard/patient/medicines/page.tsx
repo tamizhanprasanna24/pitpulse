@@ -69,7 +69,7 @@ export default function MedicinesPage() {
         m.generic_name?.toLowerCase().includes(search.toLowerCase()) ||
         m.brand?.toLowerCase().includes(search.toLowerCase()) ||
         m.category?.toLowerCase().includes(search.toLowerCase()) ||
-        m.manufacturer?.toLowerCase().includes(search.toLowerCase());
+        (m as any).manufacturer?.toLowerCase().includes(search.toLowerCase());
 
       const matchCategory = category === 'all' || m.category === category;
       const matchRx =
