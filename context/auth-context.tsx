@@ -371,16 +371,14 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     const existingAccount = registeredUsers[normalizedEmail];
 
     if (!existingAccount) {
-      return { error: 'Invalid login credentials. Account not found. Please create an account first.' };
+      return { error: 'Invalid login credentials' };
     }
 
-    if (!password || password.length < 1) {
-      return { error: 'Please enter your password.' };
+    if (!password || (existingAccount.password && existingAccount.password !== password)) {
+      return { error: 'Invalid login credentials' };
     }
 
-    // Authenticated successfully: update saved password to active user password
-    existingAccount.password = password;
-    setLocalProfile(existingAccount.profile, password);
+    setLocalProfile(existingAccount.profile, existingAccount.password);
     return { error: null };
   };
 
