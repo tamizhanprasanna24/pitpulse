@@ -184,7 +184,7 @@ export default function RegisterPage() {
     } as Profile;
 
     try {
-      await supabase.from('profiles').insert(finalProfile);
+      await supabase.from('profiles').upsert(finalProfile, { onConflict: 'email' });
     } catch {
       // ignore
     }

@@ -393,7 +393,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
   const signIn = async (email: string, password: string) => {
     const normalizedEmail = email.trim().toLowerCase();
 
-    // 1. Try Supabase Auth
+    // 1. Try Supabase Auth first
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
       if (!error && data?.user) {
@@ -403,14 +403,31 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
         return { error: null };
       }
     } catch {
-      // ignore & check local registry
+      // ignore & proceed to database lookup
     }
 
-    // 2. Check local user registry for registered account
+    // 2. Cross-Device Cloud Sync: Query Supabase 'profiles' table for accounts registered from any device
+    try {
+      const { data: remoteProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
+
+      if (remoteProfile) {
+        const p = remoteProfile as Profile;
+        setLocalProfile(p, password);
+        return { error: null };
+      }
+    } catch {
+      // Fall back to device registry
+    }
+
+    // 3. Check local user registry (and default demo accounts)
     const registeredUsers = getStoredUsers();
     const existingAccount = registeredUsers[normalizedEmail];
 
-    // Restrict login if account was not registered
+    // Restrict login if account was not registered on any device
     if (!existingAccount) {
       return { error: 'Invalid login credentials' };
     }
@@ -420,7 +437,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       return { error: 'Invalid login credentials' };
     }
 
-    // Load registered profile cleanly without modifying user data
+    // Load registered profile cleanly
     setLocalProfile(existingAccount.profile);
     return { error: null };
   };
