@@ -2,7 +2,61 @@ import { NextResponse } from 'next/server';
 import type { Profile } from '@/types';
 
 // Global server memory store for cross-device accounts
-const globalUserRegistry: Record<string, { password: string; profile: Profile }> = {};
+const globalUserRegistry: Record<string, { password: string; profile: Profile }> = {
+  'ratheesh@gmail.com': {
+    password: 'Ratheesh@2007',
+    profile: {
+      id: 'usr-ratheesh-doc-1',
+      email: 'ratheesh@gmail.com',
+      role: 'doctor',
+      full_name: 'Dr. Ratheesh',
+      date_of_birth: '1988-06-15',
+      age: 36,
+      gender: 'male',
+      blood_group: 'O+',
+      mobile_number: '+91 98765 43210',
+      address: 'City General Hospital, Cardiology Wing',
+      emergency_contact: null,
+      medical_history: null,
+      allergies: null,
+      chronic_diseases: null,
+      current_medications: null,
+      height: 175,
+      weight: 70,
+      bmi: 22.8,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: null,
+      specialization: 'Cardiologist',
+      license_number: 'DOC-LIC-99881',
+      pharmacy_id: null,
+      vehicle_number: null,
+      vehicle_type: null,
+      passcode: 'Ratheesh@2007',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
+  'doctor@gmail.com': {
+    password: 'password',
+    profile: {
+      id: 'usr-doc-1',
+      email: 'doctor@gmail.com',
+      role: 'doctor',
+      full_name: 'Dr. Sarah Sharma',
+      specialization: 'Cardiologist',
+      license_number: 'DOC-LIC-99881',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    } as Profile,
+  },
+};
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

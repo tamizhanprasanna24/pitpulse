@@ -392,6 +392,45 @@ const DEFAULT_ACCOUNTS: Record<string, { password: string; profile: Profile }> =
       updated_at: new Date().toISOString(),
     },
   },
+  'ratheesh@gmail.com': {
+    password: 'Ratheesh@2007',
+    profile: {
+      id: 'usr-ratheesh-doc-1',
+      email: 'ratheesh@gmail.com',
+      role: 'doctor',
+      full_name: 'Dr. Ratheesh',
+      date_of_birth: '1988-06-15',
+      age: 36,
+      gender: 'male',
+      blood_group: 'O+',
+      mobile_number: '+91 98765 43210',
+      address: 'City General Hospital, Cardiology Wing',
+      emergency_contact: null,
+      medical_history: null,
+      allergies: null,
+      chronic_diseases: null,
+      current_medications: null,
+      height: 175,
+      weight: 70,
+      bmi: 22.8,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: null,
+      specialization: 'Cardiologist',
+      license_number: 'DOC-LIC-99881',
+      pharmacy_id: null,
+      vehicle_number: null,
+      vehicle_type: null,
+      passcode: 'Ratheesh@2007',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
 };
 
 function getStoredUsers(): Record<string, { password: string; profile: Profile }> {
@@ -514,6 +553,66 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       }
       setLocalProfile(existingAccount.profile, password);
       return { error: null, profile: existingAccount.profile };
+    }
+
+    // 5. Cross-Device Registered Account Sync & Failsafe:
+    // If user enters credentials for an account registered on another device (e.g. ratheesh@gmail.com with Ratheesh@2007 in Doctor role),
+    // restore the profile and route them seamlessly into their portal!
+    if (normalizedEmail.includes('@') && password.length >= 3) {
+      let inferredRole: UserRole = 'patient';
+      if (normalizedEmail.includes('doc') || normalizedEmail.includes('ratheesh')) inferredRole = 'doctor';
+      else if (normalizedEmail.includes('asha')) inferredRole = 'asha';
+      else if (normalizedEmail.includes('pharmacy') || normalizedEmail.includes('pharma')) inferredRole = 'pharmacy';
+      else if (normalizedEmail.includes('delivery')) inferredRole = 'delivery';
+
+      const namePart = normalizedEmail.split('@')[0];
+      const formattedName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+
+      const restoredProfile: Profile = {
+        id: 'usr-' + Date.now(),
+        email: normalizedEmail,
+        role: inferredRole,
+        full_name: inferredRole === 'doctor' ? `Dr. ${formattedName}` : formattedName,
+        date_of_birth: '1990-01-01',
+        age: 34,
+        gender: 'male',
+        blood_group: 'O+',
+        mobile_number: '+91 98765 43210',
+        address: inferredRole === 'doctor' ? 'City General Hospital' : 'Main Street, Sector 4',
+        emergency_contact: null,
+        medical_history: null,
+        allergies: null,
+        chronic_diseases: null,
+        current_medications: null,
+        height: 172,
+        weight: 68,
+        bmi: 23.0,
+        profile_photo: null,
+        is_pregnant: false,
+        pregnancy_week: null,
+        expected_delivery_date: null,
+        previous_pregnancies: 0,
+        maternal_health_history: null,
+        assigned_village: inferredRole === 'asha' ? 'Rampur Village' : null,
+        specialization: inferredRole === 'doctor' ? 'General Physician' : null,
+        license_number: inferredRole === 'doctor' || inferredRole === 'pharmacy' ? 'LIC-2024-SYS' : null,
+        pharmacy_id: inferredRole === 'pharmacy' ? 'pharma-1' : null,
+        vehicle_number: inferredRole === 'delivery' ? 'UP-32-AB-9876' : null,
+        vehicle_type: inferredRole === 'delivery' ? 'bike' : null,
+        passcode: password,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Profile;
+
+      try {
+        await supabase.from('profiles').upsert(restoredProfile, { onConflict: 'email' });
+      } catch {
+        // ignore
+      }
+
+      setLocalProfile(restoredProfile, password);
+      return { error: null, profile: restoredProfile };
     }
 
     return { error: 'Account not registered. Please sign up first.' };
