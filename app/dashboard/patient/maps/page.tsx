@@ -10,132 +10,165 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Star, Clock, Navigation, Activity, Heart, Siren, Baby,
+  Compass, Locate, MapPin, Radio, PhoneCall, ExternalLink
 } from 'lucide-react';
 import { haversineDistance } from '@/lib/health-utils';
+import { toast } from 'sonner';
 
 type PlaceType = 'all' | 'hospital' | 'pharmacy';
 
-const DEFAULT_HOSPITALS: Hospital[] = [
-  {
-    id: 'hosp-1',
-    name: 'Rampur Community Health Center (CHC)',
-    type: 'government',
-    address: 'Main Highway Road, Rampur Sector 2',
-    latitude: 28.6145,
-    longitude: 77.2095,
-    phone: '+91 11 2345 6789',
-    icu_beds_total: 12,
-    icu_beds_available: 5,
-    general_beds_total: 60,
-    general_beds_available: 24,
-    emergency_beds_total: 10,
-    emergency_beds_available: 4,
-    maternity_beds_total: 15,
-    maternity_beds_available: 6,
-    oxygen_available: true,
-    ambulance_available: true,
-    doctor_available: true,
-    waiting_time_min: 15,
-    rating: 4.6,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'hosp-2',
-    name: 'City Care Multi-Specialty Hospital',
-    type: 'private',
-    address: 'Civil Lines, Near Metro Station, Rampur',
-    latitude: 28.6180,
-    longitude: 77.2150,
-    phone: '+91 11 9876 5432',
-    icu_beds_total: 25,
-    icu_beds_available: 8,
-    general_beds_total: 120,
-    general_beds_available: 42,
-    emergency_beds_total: 20,
-    emergency_beds_available: 7,
-    maternity_beds_total: 30,
-    maternity_beds_available: 12,
-    oxygen_available: true,
-    ambulance_available: true,
-    doctor_available: true,
-    waiting_time_min: 10,
-    rating: 4.8,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'hosp-3',
-    name: 'Sunrise Primary Health Center (PHC)',
-    type: 'phc',
-    address: 'Village Chowk, Rampur Rural Sub-District',
-    latitude: 28.6090,
-    longitude: 77.2020,
-    phone: '+91 11 5555 1234',
-    icu_beds_total: 4,
-    icu_beds_available: 1,
-    general_beds_total: 25,
-    general_beds_available: 10,
-    emergency_beds_total: 4,
-    emergency_beds_available: 2,
-    maternity_beds_total: 8,
-    maternity_beds_available: 3,
-    oxygen_available: true,
-    ambulance_available: true,
-    doctor_available: true,
-    waiting_time_min: 5,
-    rating: 4.4,
-    created_at: new Date().toISOString(),
-  },
-];
-
-const DEFAULT_PHARMACIES: Pharmacy[] = [
-  {
-    id: 'pharma-1',
-    name: 'Apollo Lifecare Pharmacy (24x7)',
-    owner_id: null,
-    address: 'Shop 12, Main Market Road, Rampur',
-    latitude: 28.6160,
-    longitude: 77.2110,
-    phone: '+91 98765 55555',
-    is_24x7: true,
-    is_open: true,
-    rating: 4.9,
-    delivery_available: true,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: 'pharma-2',
-    name: 'Jan Aushadhi Kendra (Generic Medicines)',
-    owner_id: null,
-    address: 'Opposite CHC Hospital, Rampur',
-    latitude: 28.6140,
-    longitude: 77.2080,
-    phone: '+91 98765 44444',
-    is_24x7: false,
-    is_open: true,
-    rating: 4.7,
-    delivery_available: true,
-    created_at: new Date().toISOString(),
-  },
-];
-
 export default function MapsPage() {
-  const [hospitals, setHospitals] = React.useState<Hospital[]>(DEFAULT_HOSPITALS);
-  const [pharmacies, setPharmacies] = React.useState<Pharmacy[]>(DEFAULT_PHARMACIES);
+  const [hospitals, setHospitals] = React.useState<Hospital[]>([]);
+  const [pharmacies, setPharmacies] = React.useState<Pharmacy[]>([]);
   const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number }>({ lat: 28.6139, lng: 77.2090 });
+  const [gpsAccuracy, setGpsAccuracy] = React.useState<number | null>(null);
+  const [isTracking, setIsTracking] = React.useState(false);
   const [selectedType, setSelectedType] = React.useState<PlaceType>('all');
   const [hospitalFilter, setHospitalFilter] = React.useState('all');
   const [search, setSearch] = React.useState('');
-  const mapRef = React.useRef<HTMLDivElement>(null);
-  const [mapLoaded, setMapLoaded] = React.useState(false);
+  const [selectedPlaceId, setSelectedPlaceId] = React.useState<string | null>(null);
 
+  const mapRef = React.useRef<HTMLDivElement>(null);
+  const leafletMapRef = React.useRef<any>(null);
+  const userMarkerRef = React.useRef<any>(null);
+  const watchIdRef = React.useRef<number | null>(null);
+
+  // Initialize base locations around center
+  const initializeNearbyPlaces = (centerLat: number, centerLng: number) => {
+    const defaultHospitals: Hospital[] = [
+      {
+        id: 'hosp-1',
+        name: 'Rampur Community Health Center (CHC)',
+        type: 'government',
+        address: 'Main Highway Road, Rampur Sector 2',
+        latitude: centerLat + 0.0052,
+        longitude: centerLng + 0.0061,
+        phone: '+91 11 2345 6789',
+        icu_beds_total: 12,
+        icu_beds_available: 5,
+        general_beds_total: 60,
+        general_beds_available: 24,
+        emergency_beds_total: 10,
+        emergency_beds_available: 4,
+        maternity_beds_total: 15,
+        maternity_beds_available: 6,
+        oxygen_available: true,
+        ambulance_available: true,
+        doctor_available: true,
+        waiting_time_min: 15,
+        rating: 4.6,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 'hosp-2',
+        name: 'City Care Multi-Specialty Hospital',
+        type: 'private',
+        address: 'Civil Lines, Near Metro Station, Rampur',
+        latitude: centerLat + 0.0125,
+        longitude: centerLng + 0.0142,
+        phone: '+91 11 9876 5432',
+        icu_beds_total: 25,
+        icu_beds_available: 8,
+        general_beds_total: 120,
+        general_beds_available: 42,
+        emergency_beds_total: 20,
+        emergency_beds_available: 7,
+        maternity_beds_total: 30,
+        maternity_beds_available: 12,
+        oxygen_available: true,
+        ambulance_available: true,
+        doctor_available: true,
+        waiting_time_min: 10,
+        rating: 4.8,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 'hosp-3',
+        name: 'Sunrise Primary Health Center (PHC)',
+        type: 'phc',
+        address: 'Village Chowk, Rampur Rural Sub-District',
+        latitude: centerLat - 0.0084,
+        longitude: centerLng - 0.0095,
+        phone: '+91 11 5555 1234',
+        icu_beds_total: 4,
+        icu_beds_available: 1,
+        general_beds_total: 25,
+        general_beds_available: 10,
+        emergency_beds_total: 4,
+        emergency_beds_available: 2,
+        maternity_beds_total: 8,
+        maternity_beds_available: 3,
+        oxygen_available: true,
+        ambulance_available: true,
+        doctor_available: true,
+        waiting_time_min: 5,
+        rating: 4.4,
+        created_at: new Date().toISOString(),
+      },
+    ];
+
+    const defaultPharmacies: Pharmacy[] = [
+      {
+        id: 'pharma-1',
+        name: 'Apollo Lifecare Pharmacy (24x7)',
+        owner_id: null,
+        address: 'Shop 12, Main Market Road, Rampur',
+        latitude: centerLat + 0.0031,
+        longitude: centerLng + 0.0042,
+        phone: '+91 98765 55555',
+        is_24x7: true,
+        is_open: true,
+        rating: 4.9,
+        delivery_available: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 'pharma-2',
+        name: 'Jan Aushadhi Kendra (Generic Medicines)',
+        owner_id: null,
+        address: 'Opposite CHC Hospital, Rampur',
+        latitude: centerLat - 0.0045,
+        longitude: centerLng + 0.0051,
+        phone: '+91 98765 44444',
+        is_24x7: false,
+        is_open: true,
+        rating: 4.7,
+        delivery_available: true,
+        created_at: new Date().toISOString(),
+      },
+    ];
+
+    setHospitals(defaultHospitals);
+    setPharmacies(defaultPharmacies);
+  };
+
+  // 1. Initial geolocation request & Supabase fetch
   React.useEffect(() => {
-    // Inject Leaflet CSS dynamically into head
+    // Inject Leaflet CSS
     if (!document.getElementById('leaflet-css-link')) {
       const link = document.createElement('link');
       link.id = 'leaflet-css-link';
       link.rel = 'stylesheet';
       link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
       document.head.appendChild(link);
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setUserLocation({ lat, lng });
+          setGpsAccuracy(Math.round(pos.coords.accuracy));
+          initializeNearbyPlaces(lat, lng);
+        },
+        () => {
+          initializeNearbyPlaces(28.6139, 77.2090);
+        },
+        { timeout: 8000 }
+      );
+    } else {
+      initializeNearbyPlaces(28.6139, 77.2090);
     }
 
     (async () => {
@@ -147,89 +180,161 @@ export default function MapsPage() {
         if (h.data && h.data.length > 0) setHospitals(h.data as Hospital[]);
         if (p.data && p.data.length > 0) setPharmacies(p.data as Pharmacy[]);
       } catch {
-        // Fallback data active
+        // Fallback initialized
       }
     })();
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLocation({ lat: 28.6139, lng: 77.2090 })
-      );
-    }
+    return () => {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
   }, []);
 
+  // 2. Initialize or Update Leaflet Map
   React.useEffect(() => {
-    if (!userLocation || mapLoaded) return;
+    if (!mapRef.current) return;
 
     (async () => {
       const L = (await import('leaflet' as any)).default;
 
-      if (mapRef.current && !mapRef.current.hasChildNodes()) {
-        const map = L.map(mapRef.current).setView([userLocation.lat, userLocation.lng], 13);
+      if (!leafletMapRef.current) {
+        const map = L.map(mapRef.current).setView([userLocation.lat, userLocation.lng], 14);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         }).addTo(map);
 
-        // User Location Pin
-        L.marker([userLocation.lat, userLocation.lng], {
-          icon: L.divIcon({
-            className: 'custom-pin-user',
-            html: '<div style="background:#0ea5e9;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 0 10px rgba(14,165,233,0.8)"></div>',
-            iconSize: [18, 18],
-            iconAnchor: [9, 9],
-          }),
-        }).addTo(map).bindPopup('<b>Your Location</b>');
-
-        // Hospitals Pins
-        hospitals.forEach((h) => {
-          if (h.latitude && h.longitude) {
-            const color = h.type === 'government' ? '#10b981' : h.type === 'private' ? '#0ea5e9' : '#f59e0b';
-            L.marker([h.latitude, h.longitude], {
-              icon: L.divIcon({
-                className: 'custom-pin-hosp',
-                html: `<div style="background:${color};width:16px;height:16px;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(0,0,0,0.4)"></div>`,
-                iconSize: [16, 16],
-                iconAnchor: [8, 8],
-              }),
-            }).addTo(map).bindPopup(`
-              <div style="font-family:sans-serif;padding:2px">
-                <b style="color:#0f172a">${h.name}</b><br/>
-                <span style="color:#64748b;font-size:12px">${h.type.toUpperCase()} • ${h.address}</span><br/>
-                <span style="color:#10b981;font-size:12px;font-weight:bold">ICU Beds: ${h.icu_beds_available}/${h.icu_beds_total}</span>
-              </div>
-            `);
-          }
-        });
-
-        // Pharmacy Pins
-        pharmacies.forEach((p) => {
-          if (p.latitude && p.longitude) {
-            L.marker([p.latitude, p.longitude], {
-              icon: L.divIcon({
-                className: 'custom-pin-pharma',
-                html: '<div style="background:#8b5cf6;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 8px rgba(139,92,246,0.6)"></div>',
-                iconSize: [14, 14],
-                iconAnchor: [7, 7],
-              }),
-            }).addTo(map).bindPopup(`
-              <div style="font-family:sans-serif;padding:2px">
-                <b style="color:#0f172a">${p.name}</b><br/>
-                <span style="color:#64748b;font-size:12px">${p.address}</span>
-              </div>
-            `);
-          }
-        });
-
-        setMapLoaded(true);
+        leafletMapRef.current = map;
       }
+
+      const map = leafletMapRef.current;
+
+      // Clear existing markers
+      map.eachLayer((layer: any) => {
+        if (layer instanceof L.Marker) {
+          map.removeLayer(layer);
+        }
+      });
+
+      // User Marker
+      const userMarker = L.marker([userLocation.lat, userLocation.lng], {
+        icon: L.divIcon({
+          className: 'custom-pin-user',
+          html: `<div style="position:relative;display:flex;align-items:center;justify-content:center">
+                  <div style="position:absolute;width:32px;height:32px;background:rgba(14,165,233,0.3);border-radius:50%;animation:ping 2s cubic-bezier(0,0,0.2,1) infinite"></div>
+                  <div style="background:#0ea5e9;width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 0 12px rgba(14,165,233,0.9)"></div>
+                </div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        }),
+      }).addTo(map).bindPopup(`<b>Your Live GPS Location</b><br/>Lat: ${userLocation.lat.toFixed(4)}, Lng: ${userLocation.lng.toFixed(4)}`);
+
+      userMarkerRef.current = userMarker;
+
+      // Hospital Markers
+      hospitals.forEach((h) => {
+        if (h.latitude && h.longitude) {
+          const color = h.type === 'government' ? '#10b981' : h.type === 'private' ? '#0ea5e9' : '#f59e0b';
+          const m = L.marker([h.latitude, h.longitude], {
+            icon: L.divIcon({
+              className: 'custom-pin-hosp',
+              html: `<div style="background:${color};width:18px;height:18px;border-radius:50%;border:2px solid white;box-shadow:0 0 10px rgba(0,0,0,0.4)"></div>`,
+              iconSize: [18, 18],
+              iconAnchor: [9, 9],
+            }),
+          }).addTo(map).bindPopup(`
+            <div style="font-family:sans-serif;padding:4px;max-width:200px">
+              <b style="color:#0f172a;font-size:13px">${h.name}</b><br/>
+              <span style="color:#64748b;font-size:11px">${h.type.toUpperCase()} • ${h.address}</span><br/>
+              <div style="margin-top:4px;color:#10b981;font-size:11px;font-weight:bold">
+                ICU Beds: ${h.icu_beds_available}/${h.icu_beds_total}
+              </div>
+            </div>
+          `);
+
+          m.on('click', () => setSelectedPlaceId(h.id));
+        }
+      });
+
+      // Pharmacy Markers
+      pharmacies.forEach((p) => {
+        if (p.latitude && p.longitude) {
+          const m = L.marker([p.latitude, p.longitude], {
+            icon: L.divIcon({
+              className: 'custom-pin-pharma',
+              html: '<div style="background:#8b5cf6;width:16px;height:16px;border-radius:50%;border:2px solid white;box-shadow:0 0 10px rgba(139,92,246,0.7)"></div>',
+              iconSize: [16, 16],
+              iconAnchor: [8, 8],
+            }),
+          }).addTo(map).bindPopup(`
+            <div style="font-family:sans-serif;padding:4px;max-width:200px">
+              <b style="color:#0f172a;font-size:13px">${p.name}</b><br/>
+              <span style="color:#64748b;font-size:11px">${p.address}</span>
+            </div>
+          `);
+
+          m.on('click', () => setSelectedPlaceId(p.id));
+        }
+      });
     })();
-  }, [userLocation, hospitals, pharmacies, mapLoaded]);
+  }, [userLocation, hospitals, pharmacies]);
+
+  // Toggle Live GPS Tracking
+  const toggleGpsTracking = () => {
+    if (isTracking) {
+      if (watchIdRef.current !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      setIsTracking(false);
+      toast.info('Live GPS tracking paused.');
+    } else {
+      if (!navigator.geolocation) {
+        toast.error('Geolocation is not supported by your browser.');
+        return;
+      }
+      toast.success('Live GPS Tracking active!');
+      setIsTracking(true);
+
+      const id = navigator.geolocation.watchPosition(
+        (pos) => {
+          const newLat = pos.coords.latitude;
+          const newLng = pos.coords.longitude;
+          setUserLocation({ lat: newLat, lng: newLng });
+          setGpsAccuracy(Math.round(pos.coords.accuracy));
+
+          if (leafletMapRef.current) {
+            leafletMapRef.current.flyTo([newLat, newLng], 15, { animate: true });
+          }
+        },
+        (err) => {
+          toast.error('GPS positioning failed: ' + err.message);
+          setIsTracking(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+      watchIdRef.current = id;
+    }
+  };
 
   const getDistance = (lat?: number | null, lng?: number | null) => {
     if (!userLocation || !lat || !lng) return null;
     return haversineDistance(userLocation.lat, userLocation.lng, lat, lng);
+  };
+
+  const openGoogleMapsDirections = (lat?: number | null, lng?: number | null, name?: string) => {
+    if (!lat || !lng) return;
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name || '')}`;
+    window.open(url, '_blank');
+  };
+
+  const panToPlace = (lat?: number | null, lng?: number | null, id?: string) => {
+    if (!lat || !lng) return;
+    setSelectedPlaceId(id || null);
+    if (leafletMapRef.current) {
+      leafletMapRef.current.flyTo([lat, lng], 16, { animate: true });
+    }
   };
 
   const filteredHospitals = hospitals.filter((h) => {
@@ -250,12 +355,52 @@ export default function MapsPage() {
   });
 
   return (
-    <DashboardShell title="Nearby Care" description="Find hospitals, pharmacies, and emergency services near you">
+    <DashboardShell title="Nearby Care & GPS Tracker" description="Find hospitals, pharmacies, emergency centers, and live navigation near you">
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Map View */}
-        <Card className="glass lg:col-span-2 overflow-hidden border-border/50">
-          <CardContent className="p-0">
-            <div ref={mapRef} className="h-[520px] w-full bg-muted/30" />
+        {/* Map View Container */}
+        <Card className="glass lg:col-span-2 overflow-hidden border-border/50 relative">
+          <div className="p-3 bg-card/80 backdrop-blur border-b border-border/50 flex flex-wrap items-center justify-between gap-2 z-10">
+            <div className="flex items-center gap-2">
+              <Compass className="h-5 w-5 text-primary animate-spin-slow" />
+              <span className="font-semibold text-sm">Interactive GPS Radar</span>
+              {isTracking && (
+                <Badge variant="destructive" className="animate-pulse flex items-center gap-1 text-[10px]">
+                  <Radio className="h-3 w-3" /> LIVE TRACKING
+                </Badge>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant={isTracking ? 'destructive' : 'default'}
+                onClick={toggleGpsTracking}
+                className="gap-1.5 text-xs font-semibold"
+              >
+                <Locate className="h-3.5 w-3.5" />
+                {isTracking ? 'Stop Live GPS' : 'Track My GPS'}
+              </Button>
+            </div>
+          </div>
+
+          <CardContent className="p-0 relative">
+            <div ref={mapRef} className="h-[540px] w-full bg-muted/30" />
+
+            {/* GPS Live Overlay Badge */}
+            <div className="absolute bottom-4 left-4 z-[400] bg-background/90 backdrop-blur border border-border rounded-xl p-3 shadow-xl max-w-xs text-xs space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-foreground">
+                <MapPin className="h-4 w-4 text-sky-500" />
+                <span>Current Location</span>
+              </div>
+              <p className="text-muted-foreground text-[11px]">
+                Lat: <span className="font-mono text-foreground">{userLocation.lat.toFixed(5)}</span> | Lng: <span className="font-mono text-foreground">{userLocation.lng.toFixed(5)}</span>
+              </p>
+              {gpsAccuracy !== null && (
+                <p className="text-[10px] text-emerald-600 font-medium">
+                  GPS Accuracy: ±{gpsAccuracy} meters
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -316,12 +461,19 @@ export default function MapsPage() {
           </Card>
 
           {/* Directory Listings */}
-          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+          <div className="space-y-3 max-h-[440px] overflow-y-auto pr-1">
             {(selectedType === 'all' || selectedType === 'hospital') &&
               filteredHospitals.map((h) => {
                 const dist = getDistance(h.latitude, h.longitude);
+                const isSelected = selectedPlaceId === h.id;
                 return (
-                  <Card key={h.id} className="glass hover:border-primary/40 transition-all">
+                  <Card
+                    key={h.id}
+                    onClick={() => panToPlace(h.latitude, h.longitude, h.id)}
+                    className={`glass cursor-pointer transition-all ${
+                      isSelected ? 'border-primary ring-1 ring-primary shadow-lg' : 'hover:border-primary/40'
+                    }`}
+                  >
                     <CardContent className="p-3.5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
@@ -356,11 +508,37 @@ export default function MapsPage() {
                           <span className="flex items-center gap-0.5">
                             <Clock className="h-3 w-3" /> {h.waiting_time_min}m wait
                           </span>
-                          {dist !== null && <span className="font-medium text-primary">{dist} km</span>}
+                          {dist !== null && <span className="font-bold text-primary">{dist} km</span>}
                         </div>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-primary">
-                          <Navigation className="h-4 w-4" />
-                        </Button>
+
+                        <div className="flex items-center gap-1">
+                          {h.phone && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(`tel:${h.phone}`);
+                              }}
+                              title="Call Hospital"
+                            >
+                              <PhoneCall className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 text-[11px] gap-1 px-2 text-primary font-medium"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openGoogleMapsDirections(h.latitude, h.longitude, h.name);
+                            }}
+                            title="Get Directions"
+                          >
+                            <Navigation className="h-3 w-3" /> Navigate
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -370,8 +548,15 @@ export default function MapsPage() {
             {(selectedType === 'all' || selectedType === 'pharmacy') &&
               filteredPharmacies.map((p) => {
                 const dist = getDistance(p.latitude, p.longitude);
+                const isSelected = selectedPlaceId === p.id;
                 return (
-                  <Card key={p.id} className="glass hover:border-primary/40 transition-all">
+                  <Card
+                    key={p.id}
+                    onClick={() => panToPlace(p.latitude, p.longitude, p.id)}
+                    className={`glass cursor-pointer transition-all ${
+                      isSelected ? 'border-primary ring-1 ring-primary shadow-lg' : 'hover:border-primary/40'
+                    }`}
+                  >
                     <CardContent className="p-3.5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
@@ -389,6 +574,7 @@ export default function MapsPage() {
                           {p.is_24x7 ? '24x7 Open' : p.is_open ? 'Open' : 'Closed'}
                         </Badge>
                       </div>
+
                       <div className="mt-3 flex items-center justify-between pt-2 border-t border-border/50">
                         <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground">
                           <span className="flex items-center gap-0.5 font-semibold text-amber-500">
@@ -396,13 +582,23 @@ export default function MapsPage() {
                           </span>
                           {p.delivery_available && (
                             <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary">
-                              Medicine Delivery
+                              Delivery
                             </Badge>
                           )}
-                          {dist !== null && <span className="font-medium text-primary">{dist} km</span>}
+                          {dist !== null && <span className="font-bold text-primary">{dist} km</span>}
                         </div>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-primary">
-                          <Navigation className="h-4 w-4" />
+
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-7 text-[11px] gap-1 px-2 text-primary font-medium"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openGoogleMapsDirections(p.latitude, p.longitude, p.name);
+                          }}
+                          title="Get Directions"
+                        >
+                          <Navigation className="h-3 w-3" /> Navigate
                         </Button>
                       </div>
                     </CardContent>
