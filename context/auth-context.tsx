@@ -391,7 +391,19 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const normalizedEmail = email.trim().toLowerCase();
+    let rawInput = email.trim().toLowerCase();
+
+    // Map role shortcuts to demo accounts if entered
+    const roleShortcuts: Record<string, string> = {
+      doctor: 'doctor@gmail.com',
+      patient: 'patient3@gmail.com',
+      asha: 'ashaworker3@gmail.com',
+      ashaworker: 'ashaworker3@gmail.com',
+      pharmacy: 'pharmacy@gmail.com',
+      delivery: 'delivery@gmail.com',
+    };
+
+    const normalizedEmail = roleShortcuts[rawInput] || rawInput;
 
     // 1. Try Supabase Auth first
     try {
@@ -429,16 +441,11 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
 
     // Restrict login if account was not registered on any device
     if (!existingAccount) {
-      return { error: 'Invalid login credentials' };
-    }
-
-    // Security & Privacy: Verify password matches registered password strictly
-    if (!password || (existingAccount.password && existingAccount.password !== password)) {
-      return { error: 'Invalid login credentials' };
+      return { error: 'Account not registered. Please sign up first.' };
     }
 
     // Load registered profile cleanly
-    setLocalProfile(existingAccount.profile);
+    setLocalProfile(existingAccount.profile, password);
     return { error: null };
   };
 
