@@ -178,6 +178,7 @@ export default function RegisterPage() {
     const finalProfile: Profile = {
       id: user?.id || 'usr-' + Date.now(),
       ...profileData,
+      passcode: password,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

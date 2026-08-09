@@ -32,6 +32,7 @@ export interface Profile {
   pharmacy_id: string | null;
   vehicle_number: string | null;
   vehicle_type: string | null;
+  passcode?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
