@@ -404,78 +404,21 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // ignore & check local registry
     }
 
-    // 2. Check local user registry or match role patterns
+    // 2. Check local user registry for registered account
     const registeredUsers = getStoredUsers();
-    let existingAccount = registeredUsers[normalizedEmail];
+    const existingAccount = registeredUsers[normalizedEmail];
 
+    // Restrict login if account was not explicitly registered
     if (!existingAccount) {
-      // Determine user role from email pattern
-      const userRole: UserRole = (normalizedEmail.includes('doc') || normalizedEmail.includes('doctor'))
-        ? 'doctor'
-        : (normalizedEmail.includes('asha'))
-        ? 'asha'
-        : (normalizedEmail.includes('pharma') || normalizedEmail.includes('pharmacy'))
-        ? 'pharmacy'
-        : (normalizedEmail.includes('delivery'))
-        ? 'delivery'
-        : (normalizedEmail.includes('patient') || normalizedEmail.includes('user'))
-        ? 'patient'
-        : '' as any;
-
-      if (!userRole) {
-        return { error: 'Invalid login credentials' };
-      }
-
-      const cleanName = normalizedEmail.split('@')[0].replace(/[._-]/g, ' ');
-      const formattedName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-
-      existingAccount = {
-        password: password || 'password',
-        profile: {
-          id: 'usr-' + Date.now(),
-          email: normalizedEmail,
-          role: userRole,
-          full_name: formattedName,
-          date_of_birth: null,
-          age: 30,
-          gender: 'female',
-          blood_group: 'O+',
-          mobile_number: '+91 98765 43210',
-          address: 'Rampur Sector 4',
-          emergency_contact: null,
-          medical_history: null,
-          allergies: null,
-          chronic_diseases: null,
-          current_medications: null,
-          height: null,
-          weight: null,
-          bmi: null,
-          profile_photo: null,
-          is_pregnant: false,
-          pregnancy_week: null,
-          expected_delivery_date: null,
-          previous_pregnancies: 0,
-          maternal_health_history: null,
-          assigned_village: userRole === 'asha' ? 'Rampur Village' : null,
-          specialization: userRole === 'doctor' ? 'General Medicine' : null,
-          license_number: userRole === 'doctor' || userRole === 'pharmacy' ? 'LIC-884920' : null,
-          pharmacy_id: null,
-          vehicle_number: userRole === 'delivery' ? 'UP-32-AB-9876' : null,
-          vehicle_type: userRole === 'delivery' ? 'bike' : null,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      };
+      return { error: 'Invalid login credentials' };
     }
 
-    if (!password || password.length < 1) {
-      return { error: 'Please enter your password' };
+    // Restrict login if password does not match
+    if (!password || (existingAccount.password && existingAccount.password !== password)) {
+      return { error: 'Invalid login credentials' };
     }
 
-    // Authenticated successfully: update saved password to active user password
-    existingAccount.password = password;
-    setLocalProfile(existingAccount.profile, password);
+    setLocalProfile(existingAccount.profile, existingAccount.password);
     return { error: null };
   };
 
