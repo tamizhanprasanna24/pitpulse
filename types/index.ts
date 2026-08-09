@@ -97,7 +97,7 @@ export interface Medicine {
 
 export type OrderStatus =
   | 'placed' | 'accepted' | 'rejected' | 'preparing'
-  | 'picked_up' | 'out_for_delivery' | 'delivered' | 'cancelled';
+  | 'picked_up' | 'out_for_delivery' | 'arrived' | 'delivered' | 'cancelled';
 
 export type PaymentMethod = 'upi' | 'card' | 'netbanking' | 'cod' | 'wallet';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
