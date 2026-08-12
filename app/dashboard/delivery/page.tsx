@@ -16,6 +16,7 @@ import {
   ShieldCheck, AlertCircle, KeyRound, CheckCircle, ArrowRight
 } from 'lucide-react';
 import { formatCurrency, generateOTP } from '@/lib/health-utils';
+import { getSecureGpsLocation } from '@/lib/geolocation';
 import { toast } from 'sonner';
 import { DeliveryMap } from '@/components/delivery/delivery-map';
 
@@ -52,12 +53,10 @@ export default function DeliveryDashboard() {
   const [otpError, setOtpError] = React.useState('');
 
   React.useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLocation({ lat: 28.6139, lng: 77.2090 })
-      );
-    }
+    (async () => {
+      const res = await getSecureGpsLocation();
+      setUserLocation({ lat: res.lat, lng: res.lng });
+    })();
 
     if (!profile) return;
 

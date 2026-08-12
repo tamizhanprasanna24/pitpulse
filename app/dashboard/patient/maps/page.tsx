@@ -13,6 +13,7 @@ import {
   Compass, Locate, MapPin, Radio, PhoneCall, ExternalLink
 } from 'lucide-react';
 import { haversineDistance } from '@/lib/health-utils';
+import { getSecureGpsLocation } from '@/lib/geolocation';
 import { toast } from 'sonner';
 
 type PlaceType = 'all' | 'hospital' | 'pharmacy';
@@ -113,26 +114,40 @@ export default function MapsPage() {
         name: 'Apollo Lifecare Pharmacy (24x7)',
         owner_id: null,
         address: 'Shop 12, Main Market Road, Rampur',
-        latitude: centerLat + 0.0031,
-        longitude: centerLng + 0.0042,
         phone: '+91 98765 55555',
+        latitude: centerLat + 0.004,
+        longitude: centerLng + 0.003,
+        rating: 4.9,
         is_24x7: true,
         is_open: true,
-        rating: 4.9,
         delivery_available: true,
         created_at: new Date().toISOString(),
       },
       {
         id: 'pharma-2',
-        name: 'Jan Aushadhi Kendra (Generic Medicines)',
+        name: 'Sanjivani Medicos & Lifesaving Drugs',
         owner_id: null,
-        address: 'Opposite CHC Hospital, Rampur',
-        latitude: centerLat - 0.0045,
-        longitude: centerLng + 0.0051,
-        phone: '+91 98765 44444',
+        address: 'Main Market Square',
+        phone: '+91 98765 66666',
+        latitude: centerLat - 0.006,
+        longitude: centerLng + 0.005,
+        rating: 4.6,
         is_24x7: false,
         is_open: true,
-        rating: 4.7,
+        delivery_available: true,
+        created_at: new Date().toISOString(),
+      },
+      {
+        id: 'pharma-3',
+        name: 'Apollo Pharmacy 24x7 Express',
+        owner_id: null,
+        address: 'Civil Lines, Near Clock Tower',
+        phone: '+91 98765 77777',
+        latitude: centerLat + 0.009,
+        longitude: centerLng - 0.008,
+        rating: 4.8,
+        is_24x7: true,
+        is_open: true,
         delivery_available: true,
         created_at: new Date().toISOString(),
       },
@@ -153,23 +168,18 @@ export default function MapsPage() {
       document.head.appendChild(link);
     }
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude;
-          const lng = pos.coords.longitude;
-          setUserLocation({ lat, lng });
-          setGpsAccuracy(Math.round(pos.coords.accuracy));
-          initializeNearbyPlaces(lat, lng);
-        },
-        () => {
-          initializeNearbyPlaces(28.6139, 77.2090);
-        },
-        { timeout: 8000 }
-      );
-    } else {
-      initializeNearbyPlaces(28.6139, 77.2090);
-    }
+    (async () => {
+      const res = await getSecureGpsLocation();
+      setUserLocation({ lat: res.lat, lng: res.lng });
+      if (res.accuracy) setGpsAccuracy(res.accuracy);
+      initializeNearbyPlaces(res.lat, res.lng);
+
+      if (res.error) {
+        toast.info(res.error);
+      } else {
+        toast.success(`GPS Location Locked (${res.isHighAccuracy ? 'High Accuracy' : 'Network Location'})`);
+      }
+    })();
 
     (async () => {
       try {

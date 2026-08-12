@@ -7,6 +7,7 @@ import { useAuth } from '@/context/auth-context';
 import { DashboardShell, StatCard, SectionCard } from '@/components/dashboard/shell';
 import { getHealthInsights } from '@/lib/ai-service';
 import { getHealthScore, formatDateTime, timeAgo, getPregnancyWeekInfo } from '@/lib/health-utils';
+import { getSecureGpsLocation } from '@/lib/geolocation';
 import type { HealthRecord, MedicineOrder, Appointment, Reminder, Notification } from '@/types';
 import {
   Heart, Activity, Pill, Truck, Calendar, Bell, Brain,
@@ -76,47 +77,36 @@ export default function PatientDashboard() {
   const latestO2 = healthRecords.find(r => r.type === 'oxygen_saturation');
 
   const handleSOS = async () => {
-    const dispatchSos = async (lat: number, lng: number) => {
-      const summary = `BP: ${latestBP?.value || '120'}/${latestBP?.secondary_value || '80'}, Sugar: ${latestSugar?.value || '95'}, Allergies: ${profile.allergies || 'None'}`;
-      try {
-        await supabase.from('emergency_sos').insert({
-          user_id: profile.id,
-          latitude: lat,
-          longitude: lng,
-          medical_summary: summary,
-        });
-      } catch {
-        // Fallback for demo or local auth session
-      }
-
-      // Persist to local emergency state
-      const sosRecord = {
-        id: 'sos-' + Date.now(),
+    const summary = `BP: ${latestBP?.value || '120'}/${latestBP?.secondary_value || '80'}, Sugar: ${latestSugar?.value || '95'}, Allergies: ${profile.allergies || 'None'}`;
+    const res = await getSecureGpsLocation();
+    
+    try {
+      await supabase.from('emergency_sos').insert({
         user_id: profile.id,
-        latitude: lat,
-        longitude: lng,
-        status: 'active',
+        latitude: res.lat,
+        longitude: res.lng,
         medical_summary: summary,
-        created_at: new Date().toISOString(),
-      };
-      const saved = JSON.parse(localStorage.getItem('pitpulse_emergency_sos') || '[]');
-      localStorage.setItem('pitpulse_emergency_sos', JSON.stringify([sosRecord, ...saved]));
-
-      toast.success('🚨 EMERGENCY SOS DISPATCHED!', {
-        description: 'GPS location & emergency medical summary sent to Nearest Hospital & Response Team.',
-        duration: 8000,
       });
-    };
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => dispatchSos(pos.coords.latitude, pos.coords.longitude),
-        () => dispatchSos(28.6139, 77.2090),
-        { timeout: 5000 }
-      );
-    } else {
-      dispatchSos(28.6139, 77.2090);
+    } catch {
+      // Fallback
     }
+
+    const sosRecord = {
+      id: 'sos-' + Date.now(),
+      patient_name: profile?.full_name || 'Patient',
+      patient_email: profile?.email || 'patient@gmail.com',
+      location: { lat: res.lat, lng: res.lng },
+      dispatched_at: new Date().toISOString(),
+      status: 'DISPATCHED',
+      created_at: new Date().toISOString(),
+    };
+    const saved = JSON.parse(localStorage.getItem('pitpulse_emergency_sos') || '[]');
+    localStorage.setItem('pitpulse_emergency_sos', JSON.stringify([sosRecord, ...saved]));
+
+    toast.success('🚨 EMERGENCY SOS DISPATCHED!', {
+      description: `GPS position (${res.lat.toFixed(4)}, ${res.lng.toFixed(4)}) & medical summary sent to Nearest Hospital & Response Team.`,
+      duration: 8000,
+    });
   };
 
   return (

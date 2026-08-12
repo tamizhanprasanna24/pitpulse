@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Package, Navigation, CheckCircle2, MapPin, Truck, ShieldCheck, KeyRound, AlertCircle, ArrowRight, CheckCircle } from 'lucide-react';
 import { formatCurrency, timeAgo, generateOTP } from '@/lib/health-utils';
+import { getSecureGpsLocation } from '@/lib/geolocation';
 import { toast } from 'sonner';
 import { DeliveryMap } from '@/components/delivery/delivery-map';
 
@@ -47,12 +48,10 @@ export default function DeliveryOrdersPage() {
   const [otpError, setOtpError] = React.useState('');
 
   React.useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLocation({ lat: 28.6139, lng: 77.2090 })
-      );
-    }
+    (async () => {
+      const res = await getSecureGpsLocation();
+      setUserLocation({ lat: res.lat, lng: res.lng });
+    })();
 
     if (!profile) return;
     (async () => {
