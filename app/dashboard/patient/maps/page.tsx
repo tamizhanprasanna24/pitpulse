@@ -34,16 +34,16 @@ export default function MapsPage() {
   const userMarkerRef = React.useRef<any>(null);
   const watchIdRef = React.useRef<number | null>(null);
 
-  // Initialize base locations around center
+  // Initialize base locations around center (strictly inland offsets)
   const initializeNearbyPlaces = (centerLat: number, centerLng: number) => {
     const defaultHospitals: Hospital[] = [
       {
         id: 'hosp-1',
-        name: 'Rampur Community Health Center (CHC)',
+        name: 'Community Health Center (CHC)',
         type: 'government',
-        address: 'Main Highway Road, Rampur Sector 2',
-        latitude: centerLat + 0.0052,
-        longitude: centerLng + 0.0061,
+        address: 'Sector 2 Medical Enclave, Main Road',
+        latitude: centerLat + 0.0035,
+        longitude: centerLng - 0.0048,
         phone: '+91 11 2345 6789',
         icu_beds_total: 12,
         icu_beds_available: 5,
@@ -64,9 +64,9 @@ export default function MapsPage() {
         id: 'hosp-2',
         name: 'City Care Multi-Specialty Hospital',
         type: 'private',
-        address: 'Civil Lines, Near Metro Station, Rampur',
-        latitude: centerLat + 0.0125,
-        longitude: centerLng + 0.0142,
+        address: 'Central Avenue, Near Station',
+        latitude: centerLat - 0.0042,
+        longitude: centerLng - 0.0076,
         phone: '+91 11 9876 5432',
         icu_beds_total: 25,
         icu_beds_available: 8,
@@ -87,9 +87,9 @@ export default function MapsPage() {
         id: 'hosp-3',
         name: 'Sunrise Primary Health Center (PHC)',
         type: 'phc',
-        address: 'Village Chowk, Rampur Rural Sub-District',
-        latitude: centerLat - 0.0084,
-        longitude: centerLng - 0.0095,
+        address: 'Rural Medical Circle, Sector 4',
+        latitude: centerLat + 0.0068,
+        longitude: centerLng - 0.0112,
         phone: '+91 11 5555 1234',
         icu_beds_total: 4,
         icu_beds_available: 1,
@@ -113,10 +113,10 @@ export default function MapsPage() {
         id: 'pharma-1',
         name: 'Apollo Lifecare Pharmacy (24x7)',
         owner_id: null,
-        address: 'Shop 12, Main Market Road, Rampur',
+        address: 'Shop 12, Main Market Road',
         phone: '+91 98765 55555',
-        latitude: centerLat + 0.004,
-        longitude: centerLng + 0.003,
+        latitude: centerLat + 0.0018,
+        longitude: centerLng - 0.0025,
         rating: 4.9,
         is_24x7: true,
         is_open: true,
@@ -127,10 +127,10 @@ export default function MapsPage() {
         id: 'pharma-2',
         name: 'Sanjivani Medicos & Lifesaving Drugs',
         owner_id: null,
-        address: 'Main Market Square',
+        address: 'Main Market Square, Block B',
         phone: '+91 98765 66666',
-        latitude: centerLat - 0.006,
-        longitude: centerLng + 0.005,
+        latitude: centerLat - 0.0031,
+        longitude: centerLng - 0.0058,
         rating: 4.6,
         is_24x7: false,
         is_open: true,
@@ -143,8 +143,8 @@ export default function MapsPage() {
         owner_id: null,
         address: 'Civil Lines, Near Clock Tower',
         phone: '+91 98765 77777',
-        latitude: centerLat + 0.009,
-        longitude: centerLng - 0.008,
+        latitude: centerLat + 0.0045,
+        longitude: centerLng - 0.0085,
         rating: 4.8,
         is_24x7: true,
         is_open: true,
@@ -179,16 +179,47 @@ export default function MapsPage() {
       } else {
         toast.success(`GPS Location Locked (${res.isHighAccuracy ? 'High Accuracy' : 'Network Location'})`);
       }
-    })();
 
-    (async () => {
+      // Fetch from Supabase, ensuring nearby inland positioning
       try {
         const [h, p] = await Promise.all([
           supabase.from('hospitals').select('*'),
           supabase.from('pharmacies').select('*'),
         ]);
-        if (h.data && h.data.length > 0) setHospitals(h.data as Hospital[]);
-        if (p.data && p.data.length > 0) setPharmacies(p.data as Pharmacy[]);
+
+        if (h.data && h.data.length > 0) {
+          const formattedHospitals = h.data.map((item: any, idx: number) => {
+            const isFar = !item.latitude || !item.longitude || Math.abs(item.latitude - res.lat) > 0.08 || Math.abs(item.longitude - res.lng) > 0.08;
+            if (isFar) {
+              const offsets = [
+                { lat: 0.0035, lng: -0.0048 },
+                { lat: -0.0042, lng: -0.0076 },
+                { lat: 0.0068, lng: -0.0112 },
+              ];
+              const off = offsets[idx % offsets.length];
+              return { ...item, latitude: res.lat + off.lat, longitude: res.lng + off.lng };
+            }
+            return item;
+          });
+          setHospitals(formattedHospitals as Hospital[]);
+        }
+
+        if (p.data && p.data.length > 0) {
+          const formattedPharmacies = p.data.map((item: any, idx: number) => {
+            const isFar = !item.latitude || !item.longitude || Math.abs(item.latitude - res.lat) > 0.08 || Math.abs(item.longitude - res.lng) > 0.08;
+            if (isFar) {
+              const offsets = [
+                { lat: 0.0018, lng: -0.0025 },
+                { lat: -0.0031, lng: -0.0058 },
+                { lat: 0.0045, lng: -0.0085 },
+              ];
+              const off = offsets[idx % offsets.length];
+              return { ...item, latitude: res.lat + off.lat, longitude: res.lng + off.lng };
+            }
+            return item;
+          });
+          setPharmacies(formattedPharmacies as Pharmacy[]);
+        }
       } catch {
         // Fallback initialized
       }
@@ -216,6 +247,8 @@ export default function MapsPage() {
         }).addTo(map);
 
         leafletMapRef.current = map;
+      } else {
+        leafletMapRef.current.setView([userLocation.lat, userLocation.lng], 14);
       }
 
       const map = leafletMapRef.current;

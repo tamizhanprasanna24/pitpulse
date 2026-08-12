@@ -17,13 +17,13 @@ export function DeliveryMap({ order, userLocation }: DeliveryMapProps) {
   const leafletMapRef = React.useRef<any>(null);
 
   const pharmacyCoords = {
-    lat: userLocation.lat - 0.006,
-    lng: userLocation.lng - 0.008,
+    lat: userLocation.lat - 0.004,
+    lng: userLocation.lng - 0.006,
   };
 
   const patientCoords = {
-    lat: userLocation.lat + 0.008,
-    lng: userLocation.lng + 0.010,
+    lat: userLocation.lat + 0.005,
+    lng: userLocation.lng - 0.004,
   };
 
   React.useEffect(() => {
