@@ -4,7 +4,8 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { useAuth } from '@/context/auth-context';
+import { useAuth, getDashboardRoute } from '@/context/auth-context';
+import { toast } from 'sonner';
 import Image from 'next/image';
 import {
   Activity, Menu, X, Moon, Sun, LogOut, Bell, Search,
@@ -159,6 +160,14 @@ export function DashboardShell({ children, title, description }: DashboardShellP
   const routeRole = pathParts[2] as UserRole;
   const validRoles: UserRole[] = ['patient', 'doctor', 'asha', 'pharmacy', 'delivery'];
   const currentRole = (validRoles.includes(routeRole) ? routeRole : profile?.role || 'patient') as UserRole;
+
+  // Strict Role Privacy & Access Guard: Lock users to their registered role portal only
+  React.useEffect(() => {
+    if (profile && validRoles.includes(routeRole) && profile.role !== routeRole) {
+      toast.error(`🔒 Privacy Control: Your account is registered as ${profile.role.toUpperCase()}. Access to ${routeRole.toUpperCase()} portal is restricted.`);
+      router.replace(getDashboardRoute(profile.role));
+    }
+  }, [profile, routeRole, router]);
 
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [notificationsList, setNotificationsList] = React.useState<Array<{ id: string; title: string; message: string; time: string; unread: boolean }>>([]);

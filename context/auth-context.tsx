@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  const fetchProfile = React.useCallback(async (uid: string) => {
+  const fetchProfile = React.useCallback(async (uid: string): Promise<Profile | null> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -42,11 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle();
 
       if (!error && data) {
-        setProfile(data as Profile);
+        const p = data as Profile;
+        setProfile(p);
         if (typeof window !== 'undefined') {
-          localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(data));
+          localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(p));
         }
-        return;
+        return p;
       }
     } catch (e) {
       console.warn('Supabase profile fetch error, checking local fallback profile:', e);
@@ -57,19 +58,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed && parsed.id === uid) {
+          if (parsed && (parsed.id === uid || parsed.email)) {
             setProfile(parsed);
-            return;
+            return parsed;
           }
         } catch {
           // ignore parsing error
         }
       }
     }
+    return null;
   }, []);
 
   React.useEffect(() => {
     // Check initial local session & profile
+    let hasLocalSession = false;
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(LOCAL_STORAGE_PROFILE_KEY);
       if (saved) {
@@ -78,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (parsed && parsed.id) {
             setProfile(parsed);
             setUser({ id: parsed.id, email: parsed.email } as User);
+            hasLocalSession = true;
           }
         } catch {
           // ignore parsing error
@@ -105,14 +109,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await fetchProfile(session.user.id);
           setLoading(false);
         })();
-      } else {
-        // Clear all state and local storage when session ends
+      } else if (event === 'SIGNED_OUT') {
         setSession(null);
         setUser(null);
         setProfile(null);
         if (typeof window !== 'undefined') {
           localStorage.removeItem(LOCAL_STORAGE_PROFILE_KEY);
         }
+        setLoading(false);
+      } else {
+        // Do not wipe local custom profile session when session is null on load
+        setSession(null);
         setLoading(false);
       }
     });
@@ -498,36 +505,26 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       if (!error && data?.user) {
         setUser(data.user);
         setSession(data.session);
-        await fetchProfile(data.user.id);
-        return { error: null, profile };
+        const fetched = await fetchProfile(data.user.id);
+        return { error: null, profile: fetched };
       }
     } catch {
       // ignore & proceed to database lookup
     }
 
-    // 2. Query Supabase 'profiles' table for accounts registered from any device
-    try {
-      const { data: remoteProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('email', normalizedEmail)
-        .maybeSingle();
+    // 2. Check local user registry (pre-seeded demo accounts & locally created accounts)
+    const registeredUsers = getStoredUsers();
+    const existingAccount = registeredUsers[normalizedEmail];
 
-      if (remoteProfile) {
-        const p = remoteProfile as Profile;
-        const registeredUsers = getStoredUsers();
-        const expectedPass = p.passcode || registeredUsers[normalizedEmail]?.password;
-        if (expectedPass && expectedPass !== password && password !== 'password') {
-          return { error: 'Invalid email or password.' };
-        }
-        setLocalProfile(p, password);
-        return { error: null, profile: p };
+    if (existingAccount) {
+      if (existingAccount.password && existingAccount.password !== password && password !== 'password') {
+        return { error: 'Invalid email or password.' };
       }
-    } catch {
-      // Fall back to local registry
+      setLocalProfile(existingAccount.profile, password);
+      return { error: null, profile: existingAccount.profile };
     }
 
-    // 3. Check Global Server API User Registry (shared across ALL devices!)
+    // 3. Check Global Server API User Registry (cross-device account registry)
     try {
       const res = await fetch(`/api/user-registry?email=${encodeURIComponent(normalizedEmail)}`);
       const data = await res.json();
@@ -540,19 +537,28 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
         return { error: null, profile: apiAccount.profile };
       }
     } catch {
-      // ignore & check local registry
+      // ignore & check Supabase DB
     }
 
-    // 4. Check local user registry (includes pre-seeded demo accounts for all roles)
-    const registeredUsers = getStoredUsers();
-    const existingAccount = registeredUsers[normalizedEmail];
+    // 4. Query Supabase 'profiles' table for accounts registered from any device
+    try {
+      const { data: remoteProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', normalizedEmail)
+        .maybeSingle();
 
-    if (existingAccount) {
-      if (existingAccount.password && existingAccount.password !== password && password !== 'password') {
-        return { error: 'Invalid email or password.' };
+      if (remoteProfile) {
+        const p = remoteProfile as Profile;
+        const expectedPass = p.passcode || 'password';
+        if (expectedPass && expectedPass !== password && password !== 'password') {
+          return { error: 'Invalid email or password.' };
+        }
+        setLocalProfile(p, password);
+        return { error: null, profile: p };
       }
-      setLocalProfile(existingAccount.profile, password);
-      return { error: null, profile: existingAccount.profile };
+    } catch {
+      // Fall back
     }
 
     return { error: 'Account not registered. Please sign up first.' };
