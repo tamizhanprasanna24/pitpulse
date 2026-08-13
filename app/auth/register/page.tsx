@@ -61,6 +61,16 @@ export default function RegisterPage() {
   const [pregnancyWeek, setPregnancyWeek] = React.useState('');
   const [expectedDeliveryDate, setExpectedDeliveryDate] = React.useState('');
 
+  // Role-Specific Professional Verification Fields
+  const [hospitalName, setHospitalName] = React.useState('');
+  const [medicalCouncil, setMedicalCouncil] = React.useState('');
+  const [ashaId, setAshaId] = React.useState('');
+  const [phcName, setPhcName] = React.useState('');
+  const [pharmacyName, setPharmacyName] = React.useState('');
+  const [pharmacistId, setPharmacistId] = React.useState('');
+  const [drivingLicense, setDrivingLicense] = React.useState('');
+  const [deliveryZone, setDeliveryZone] = React.useState('');
+
   // Step 4 Verification State
   const [generatedOtp, setGeneratedOtp] = React.useState('733301');
   const [inputOtp, setInputOtp] = React.useState('');
@@ -98,19 +108,19 @@ export default function RegisterPage() {
   const handleGoToStep4Verification = (e: React.FormEvent) => {
     e.preventDefault();
     if (role === 'doctor' && (!specialization || !licenseNumber)) {
-      toast.error('Please enter your medical specialization and license number');
+      toast.error('Doctor Verification Required: Please enter your specialization and medical license number');
       return;
     }
-    if (role === 'asha' && !assignedVillage) {
-      toast.error('Please enter your assigned village');
+    if (role === 'asha' && (!assignedVillage || !ashaId)) {
+      toast.error('ASHA Worker Verification Required: Please enter your ASHA worker ID and assigned village');
       return;
     }
-    if (role === 'pharmacy' && !licenseNumber) {
-      toast.error('Please enter your pharmacy license number');
+    if (role === 'pharmacy' && (!licenseNumber || !pharmacyName)) {
+      toast.error('Pharmacy Verification Required: Please enter your pharmacy store name and license number');
       return;
     }
-    if (role === 'delivery' && (!vehicleNumber || !vehicleType)) {
-      toast.error('Please enter your vehicle details');
+    if (role === 'delivery' && (!vehicleNumber || !vehicleType || !drivingLicense)) {
+      toast.error('Delivery Partner Verification Required: Please enter your vehicle plate number, type, and driving license');
       return;
     }
 
@@ -119,7 +129,37 @@ export default function RegisterPage() {
     setInputOtp('');
     setOtpError('');
     setStep(4);
-    toast.success('Step 4 Active: 6-Digit Verification Code Sent!');
+    toast.success(`Step 4 Active: Security OTP verification code dispatched for ${role.toUpperCase()} role!`);
+  };
+
+  const getStep3Title = () => {
+    switch (role) {
+      case 'doctor': return 'Doctor License & Clinical Credentials';
+      case 'asha': return 'ASHA Worker & Community Health Credentials';
+      case 'pharmacy': return 'Pharmacy License & Store Registration';
+      case 'delivery': return 'Delivery Vehicle & Driving License Verification';
+      default: return 'Patient Health & Medical History';
+    }
+  };
+
+  const getStep3Desc = () => {
+    switch (role) {
+      case 'doctor': return 'Provide your medical council license, specialization, and hospital affiliation details.';
+      case 'asha': return 'Provide your ASHA registration ID, assigned village, and primary health center ward.';
+      case 'pharmacy': return 'Provide your retail drug license number, pharmacy store name, and pharmacist ID.';
+      case 'delivery': return 'Provide your driving license, vehicle registration, type, and operating delivery zone.';
+      default: return 'Provide your medical history, allergies, and chronic health details for AI assistance.';
+    }
+  };
+
+  const getStep4Title = () => {
+    switch (role) {
+      case 'doctor': return 'Step 4: Doctor Account & License OTP Verification';
+      case 'asha': return 'Step 4: ASHA Field Worker Security OTP Verification';
+      case 'pharmacy': return 'Step 4: Pharmacy License & Security OTP Verification';
+      case 'delivery': return 'Step 4: Delivery Partner Security OTP Verification';
+      default: return 'Step 4: Patient Account Security OTP Verification';
+    }
   };
 
   const handleVerifyOtpAndCompleteRegistration = async () => {
@@ -239,14 +279,14 @@ export default function RegisterPage() {
             <CardTitle className="text-2xl font-bold">
               {step === 1 && 'Create your account'}
               {step === 2 && 'Personal Information'}
-              {step === 3 && 'Health & Role Details'}
-              {step === 4 && 'Step 4: Security OTP Verification'}
+              {step === 3 && getStep3Title()}
+              {step === 4 && getStep4Title()}
             </CardTitle>
             <CardDescription>
               {step === 1 && 'Choose your role and set up credentials'}
               {step === 2 && 'Tell us about yourself for personalized care'}
-              {step === 3 && 'Complete your health profile and credentials'}
-              {step === 4 && 'Enter the 6-digit security code to verify and activate your account'}
+              {step === 3 && getStep3Desc()}
+              {step === 4 && 'Enter the 6-digit security code to verify and activate your role account'}
             </CardDescription>
           </CardHeader>
 
@@ -484,71 +524,119 @@ export default function RegisterPage() {
                   <>
                     <div className="space-y-2">
                       <Label>Medical History</Label>
-                      <Input placeholder="Past medical conditions, surgeries..." value={medicalHistory} onChange={(e) => setMedicalHistory(e.target.value)} />
+                      <Input placeholder="Past medical conditions, surgeries, hospitalizations..." value={medicalHistory} onChange={(e) => setMedicalHistory(e.target.value)} />
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Allergies</Label>
-                        <Input placeholder="e.g. Penicillin, Dust" value={allergies} onChange={(e) => setAllergies(e.target.value)} />
+                        <Input placeholder="e.g. Penicillin, Dust, Peanuts" value={allergies} onChange={(e) => setAllergies(e.target.value)} />
                       </div>
                       <div className="space-y-2">
                         <Label>Chronic Diseases</Label>
-                        <Input placeholder="e.g. Diabetes, Hypertension" value={chronicDiseases} onChange={(e) => setChronicDiseases(e.target.value)} />
+                        <Input placeholder="e.g. Diabetes, Hypertension, Asthma" value={chronicDiseases} onChange={(e) => setChronicDiseases(e.target.value)} />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label>Current Medications</Label>
-                      <Input placeholder="e.g. Metformin 500mg daily" value={currentMedications} onChange={(e) => setCurrentMedications(e.target.value)} />
+                      <Input placeholder="e.g. Metformin 500mg daily, Amlodipine 5mg" value={currentMedications} onChange={(e) => setCurrentMedications(e.target.value)} />
                     </div>
                   </>
                 )}
 
                 {role === 'doctor' && (
                   <>
-                    <div className="space-y-2">
-                      <Label>Medical Specialization *</Label>
-                      <Input placeholder="e.g. General Medicine & Cardiology" value={specialization} onChange={(e) => setSpecialization(e.target.value)} required />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Medical Specialization *</Label>
+                        <Input placeholder="e.g. General Medicine & Cardiology" value={specialization} onChange={(e) => setSpecialization(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Medical License / Registration Number *</Label>
+                        <Input placeholder="e.g. MCI-884920-IND" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} required />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Medical License Number *</Label>
-                      <Input placeholder="e.g. MCI-884920-IND" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} required />
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Hospital / Clinic Name</Label>
+                        <Input placeholder="e.g. City General Hospital" value={hospitalName} onChange={(e) => setHospitalName(e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Medical Council Board</Label>
+                        <Input placeholder="e.g. National Medical Commission / State Council" value={medicalCouncil} onChange={(e) => setMedicalCouncil(e.target.value)} />
+                      </div>
                     </div>
                   </>
                 )}
 
                 {role === 'asha' && (
-                  <div className="space-y-2">
-                    <Label>Assigned Village / Region *</Label>
-                    <Input placeholder="e.g. Rampur Village & Sector 4" value={assignedVillage} onChange={(e) => setAssignedVillage(e.target.value)} required />
-                  </div>
+                  <>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>ASHA Worker Registration ID *</Label>
+                        <Input placeholder="e.g. ASHA-TN-2024-991" value={ashaId} onChange={(e) => setAshaId(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Assigned Village / Region *</Label>
+                        <Input placeholder="e.g. Rampur Village & Sector 4" value={assignedVillage} onChange={(e) => setAssignedVillage(e.target.value)} required />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Primary Health Center (PHC)</Label>
+                      <Input placeholder="e.g. Central Community PHC Center" value={phcName} onChange={(e) => setPhcName(e.target.value)} />
+                    </div>
+                  </>
                 )}
 
                 {role === 'pharmacy' && (
-                  <div className="space-y-2">
-                    <Label>Pharmacy License Number *</Label>
-                    <Input placeholder="e.g. PHARM-LICENSE-2024-88" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} required />
-                  </div>
+                  <>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Pharmacy Store Name *</Label>
+                        <Input placeholder="e.g. MedPlus Community Pharmacy" value={pharmacyName} onChange={(e) => setPharmacyName(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Retail Drug License Number *</Label>
+                        <Input placeholder="e.g. PHARM-LICENSE-2024-88" value={licenseNumber} onChange={(e) => setLicenseNumber(e.target.value)} required />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Registered Pharmacist License ID</Label>
+                      <Input placeholder="e.g. REG-PHARM-77291" value={pharmacistId} onChange={(e) => setPharmacistId(e.target.value)} />
+                    </div>
+                  </>
                 )}
 
                 {role === 'delivery' && (
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Vehicle Registration Number *</Label>
-                      <Input placeholder="e.g. UP-32-AB-9876" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} required />
+                  <>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Driving License Number *</Label>
+                        <Input placeholder="e.g. DL-1420110098765" value={drivingLicense} onChange={(e) => setDrivingLicense(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Vehicle Registration Number *</Label>
+                        <Input placeholder="e.g. TN-09-AB-9876" value={vehicleNumber} onChange={(e) => setVehicleNumber(e.target.value)} required />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Vehicle Type *</Label>
-                      <Select value={vehicleType} onValueChange={setVehicleType}>
-                        <SelectTrigger><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="bike">Motorcycle / Bike</SelectItem>
-                          <SelectItem value="scooter">Scooter</SelectItem>
-                          <SelectItem value="car">Car</SelectItem>
-                          <SelectItem value="van">Delivery Van</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Vehicle Type *</Label>
+                        <Select value={vehicleType} onValueChange={setVehicleType}>
+                          <SelectTrigger><SelectValue placeholder="Select Vehicle" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bike">Motorcycle / Bike</SelectItem>
+                            <SelectItem value="scooter">Scooter</SelectItem>
+                            <SelectItem value="car">Car</SelectItem>
+                            <SelectItem value="van">Delivery Van</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Delivery Zone / Area</Label>
+                        <Input placeholder="e.g. South District & Sector 2" value={deliveryZone} onChange={(e) => setDeliveryZone(e.target.value)} />
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
 
                 <div className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
