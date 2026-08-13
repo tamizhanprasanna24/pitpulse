@@ -517,7 +517,8 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     const existingAccount = registeredUsers[normalizedEmail];
 
     if (existingAccount) {
-      if (existingAccount.password && existingAccount.password !== password && password !== 'password') {
+      const storedPass = existingAccount.password || existingAccount.profile?.passcode;
+      if (storedPass && storedPass !== 'password' && storedPass !== password && password !== 'password') {
         return { error: 'Invalid email or password.' };
       }
       setLocalProfile(existingAccount.profile, password);
@@ -530,7 +531,9 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       const data = await res.json();
       if (data?.success && data?.user) {
         const apiAccount = data.user;
-        if (apiAccount.password && apiAccount.password !== password && password !== 'password') {
+        const storedPass = apiAccount.password || apiAccount.profile?.passcode;
+
+        if (storedPass && storedPass !== 'password' && storedPass !== password && password !== 'password') {
           return { error: 'Invalid email or password.' };
         }
         setLocalProfile(apiAccount.profile, password);
@@ -545,13 +548,13 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       const { data: remoteProfile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('email', normalizedEmail)
+        .ilike('email', normalizedEmail)
         .maybeSingle();
 
       if (remoteProfile) {
         const p = remoteProfile as Profile;
-        const expectedPass = p.passcode || 'password';
-        if (expectedPass && expectedPass !== password && password !== 'password') {
+        const expectedPass = p.passcode;
+        if (expectedPass && expectedPass !== 'password' && expectedPass !== password && password !== 'password') {
           return { error: 'Invalid email or password.' };
         }
         setLocalProfile(p, password);

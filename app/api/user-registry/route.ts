@@ -80,22 +80,25 @@ const globalUserRegistry: Record<string, { password: string; profile: Profile }>
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const email = searchParams.get('email')?.trim().toLowerCase();
+  const rawEmail = searchParams.get('email')?.trim() || '';
+  const email = rawEmail.toLowerCase();
 
   if (!email) {
     return NextResponse.json({ success: false, error: 'Email parameter required' }, { status: 400 });
   }
 
-  const account = globalUserRegistry[email];
+  // Check in-memory registry first
+  const account = globalUserRegistry[email] || globalUserRegistry[rawEmail];
   if (account) {
     return NextResponse.json({ success: true, user: account });
   }
 
+  // Query Supabase profiles table for cross-device registered user
   try {
     const { data: remoteProfile } = await supabase
       .from('profiles')
       .select('*')
-      .eq('email', email)
+      .ilike('email', email)
       .maybeSingle();
 
     if (remoteProfile) {
@@ -123,10 +126,14 @@ export async function POST(request: Request) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    globalUserRegistry[normalizedEmail] = { password: password || 'password', profile };
+    const effectivePass = password || profile.passcode || 'password';
+    const updatedProfile = { ...profile, passcode: effectivePass };
+
+    const userAcc = { password: effectivePass, profile: updatedProfile };
+    globalUserRegistry[normalizedEmail] = userAcc;
 
     try {
-      await supabase.from('profiles').upsert(profile, { onConflict: 'email' });
+      await supabase.from('profiles').upsert(updatedProfile, { onConflict: 'email' });
     } catch {
       // ignore
     }
