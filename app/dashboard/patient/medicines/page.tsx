@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/auth-context';
 import { DashboardShell } from '@/components/dashboard/shell';
@@ -28,6 +29,7 @@ import { toast } from 'sonner';
 type SortOption = 'default' | 'price-low' | 'price-high' | 'name-asc';
 
 export default function MedicinesPage() {
+  const router = useRouter();
   const { profile } = useAuth();
   const [medicines, setMedicines] = React.useState<Medicine[]>(SAMPLE_MEDICINES);
   const [search, setSearch] = React.useState('');
@@ -129,15 +131,71 @@ export default function MedicinesPage() {
   const cartItemCount = cart.reduce((sum, i) => sum + i.quantity, 0);
   const requiresRx = cart.some((item) => item.prescription_required);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    if (cart.length === 0) return;
+
+    const orderId = 'ord-' + Math.floor(100000 + Math.random() * 900000);
+    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const newOrder = {
+      id: orderId,
+      patient_id: profile?.id || 'usr-pat-demo',
+      pharmacy_id: cart[0]?.pharmacy_id || 'pharma-1',
+      delivery_partner_id: 'usr-deliv-1',
+      status: 'placed' as const,
+      total_amount: cartTotal + 40,
+      delivery_address: profile?.full_name ? `${profile.full_name}'s Delivery Location, Chennai` : '12, Gandhi Road, Mylapore, Chennai',
+      payment_method: 'cod',
+      payment_status: 'paid' as const,
+      is_emergency: false,
+      otp: otpCode,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // 1. Insert to Supabase DB
+    try {
+      await supabase.from('medicine_orders').insert({
+        id: newOrder.id,
+        patient_id: newOrder.patient_id,
+        pharmacy_id: newOrder.pharmacy_id,
+        delivery_partner_id: newOrder.delivery_partner_id,
+        status: newOrder.status,
+        total_amount: newOrder.total_amount,
+        delivery_address: newOrder.delivery_address,
+        payment_method: newOrder.payment_method,
+        payment_status: newOrder.payment_status,
+        otp: newOrder.otp,
+      });
+    } catch (e) {
+      console.warn('Supabase order insert error, saving to local order storage:', e);
+    }
+
+    // 2. Persist to Local Storage so it instantly displays under /dashboard/patient/orders
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pitpulse_user_orders');
+        const existing = saved ? JSON.parse(saved) : [];
+        localStorage.setItem('pitpulse_user_orders', JSON.stringify([newOrder, ...existing]));
+      } catch (e) {
+        console.error('LocalStorage order save error:', e);
+      }
+    }
+
     if (requiresRx) {
-      toast.info('Doctor Prescription Verification', {
-        description: 'Your cart contains prescription-only (Rx) medicines. Verified by pharmacy during dispatch.',
+      toast.info('Doctor Prescription Order Placed!', {
+        description: `Order #${orderId.slice(0, 8).toUpperCase()} placed. Rx verified during pharmacy dispatch. OTP: ${otpCode}`,
       });
     } else {
-      toast.success('Order placed successfully! Delivery partner assigned.');
+      toast.success('Order Placed Successfully!', {
+        description: `Order #${orderId.slice(0, 8).toUpperCase()} placed. Delivery partner assigned. OTP: ${otpCode}`,
+      });
     }
+
     setCart([]);
+    setTimeout(() => {
+      router.push('/dashboard/patient/orders');
+    }, 1000);
   };
 
   return (

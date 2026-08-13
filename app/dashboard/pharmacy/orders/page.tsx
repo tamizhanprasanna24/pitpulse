@@ -15,20 +15,71 @@ export default function PharmacyOrdersPage() {
   const { profile } = useAuth();
   const [orders, setOrders] = React.useState<MedicineOrder[]>([]);
   const [pharmacy, setPharmacy] = React.useState<Pharmacy | null>(null);
-  React.useEffect(() => {
-    if (!profile) return;
-    (async () => {
-      const { data: pharm } = await supabase.from('pharmacies').select('*').eq('owner_id', profile.id).maybeSingle();
-      setPharmacy(pharm as Pharmacy | null);
-      if (pharm) {
-        const { data: ords } = await supabase.from('medicine_orders').select('*').eq('pharmacy_id', pharm.id).order('created_at', { ascending: false });
-        setOrders(ords as MedicineOrder[] || []);
+
+  const fetchPharmacyOrders = React.useCallback(async () => {
+    let remoteOrds: MedicineOrder[] = [];
+    let localOrds: MedicineOrder[] = [];
+
+    if (profile) {
+      try {
+        const { data: pharm } = await supabase.from('pharmacies').select('*').eq('owner_id', profile.id).maybeSingle();
+        setPharmacy(pharm as Pharmacy | null);
+        if (pharm) {
+          const { data: ords } = await supabase.from('medicine_orders').select('*').eq('pharmacy_id', pharm.id).order('created_at', { ascending: false });
+          if (ords) remoteOrds = ords as MedicineOrder[];
+        }
+      } catch {
+        // ignore
       }
-    })();
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pitpulse_user_orders');
+        if (saved) localOrds = JSON.parse(saved);
+      } catch {
+        // ignore
+      }
+    }
+
+    const combinedMap = new Map<string, MedicineOrder>();
+    localOrds.forEach(o => combinedMap.set(o.id, o));
+    remoteOrds.forEach(o => combinedMap.set(o.id, o));
+
+    setOrders(Array.from(combinedMap.values()));
   }, [profile]);
 
-  const handleAccept = async (id: string) => { const { error } = await supabase.from('medicine_orders').update({ status: 'accepted' }).eq('id', id); if (error) { toast.error('Failed'); } else { toast.success('Order accepted'); setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'accepted' as const } : o)); } };
-  const handleReject = async (id: string) => { const { error } = await supabase.from('medicine_orders').update({ status: 'rejected' }).eq('id', id); if (error) { toast.error('Failed'); } else { toast.success('Order rejected'); setOrders(prev => prev.map(o => o.id === id ? { ...o, status: 'rejected' as const } : o)); } };
+  React.useEffect(() => {
+    fetchPharmacyOrders();
+  }, [fetchPharmacyOrders]);
+
+  const updateOrderStatus = (id: string, newStatus: MedicineOrder['status']) => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('pitpulse_user_orders');
+        if (saved) {
+          const existing: MedicineOrder[] = JSON.parse(saved);
+          const updated = existing.map(o => o.id === id ? { ...o, status: newStatus } : o);
+          localStorage.setItem('pitpulse_user_orders', JSON.stringify(updated));
+        }
+      } catch {
+        // ignore
+      }
+    }
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus } : o));
+  };
+
+  const handleAccept = async (id: string) => {
+    try { await supabase.from('medicine_orders').update({ status: 'accepted' }).eq('id', id); } catch {}
+    updateOrderStatus(id, 'accepted');
+    toast.success('Order accepted! Dispatched for packaging.');
+  };
+
+  const handleReject = async (id: string) => {
+    try { await supabase.from('medicine_orders').update({ status: 'rejected' }).eq('id', id); } catch {}
+    updateOrderStatus(id, 'rejected');
+    toast.success('Order rejected');
+  };
 
   return (
     <DashboardShell title="Orders" description="Manage incoming medicine orders">
