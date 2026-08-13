@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = React.useState<Profile | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  const fetchProfile = React.useCallback(async (uid: string): Promise<Profile | null> => {
+  const fetchProfile = React.useCallback(async (uid: string, emailHint?: string): Promise<Profile | null> => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -50,7 +50,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return p;
       }
     } catch (e) {
-      console.warn('Supabase profile fetch error, checking local fallback profile:', e);
+      console.warn('Supabase profile fetch error by ID, checking email fallback:', e);
+    }
+
+    const targetEmail = emailHint || (uid.includes('@') ? uid : null);
+    if (targetEmail) {
+      try {
+        const { data: pByEmail } = await supabase
+          .from('profiles')
+          .select('*')
+          .ilike('email', targetEmail.trim().toLowerCase())
+          .maybeSingle();
+
+        if (pByEmail) {
+          const p = pByEmail as Profile;
+          setProfile(p);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(LOCAL_STORAGE_PROFILE_KEY, JSON.stringify(p));
+          }
+          return p;
+        }
+      } catch {
+        // ignore
+      }
     }
 
     if (typeof window !== 'undefined') {
@@ -58,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed && (parsed.id === uid || parsed.email)) {
+          if (parsed && (parsed.id === uid || parsed.email === targetEmail)) {
             setProfile(parsed);
             return parsed;
           }
@@ -93,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         setSession(session);
         setUser(session.user);
-        fetchProfile(session.user.id).finally(() => setLoading(false));
+        fetchProfile(session.user.id, session.user.email).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
@@ -106,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session.user);
         (async () => {
-          await fetchProfile(session.user.id);
+          await fetchProfile(session.user.id, session.user.email);
           setLoading(false);
         })();
       } else if (event === 'SIGNED_OUT') {
@@ -505,7 +527,33 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       if (!error && data?.user) {
         setUser(data.user);
         setSession(data.session);
-        const fetched = await fetchProfile(data.user.id);
+        let fetched = await fetchProfile(data.user.id, data.user.email);
+
+        if (!fetched && data.user.email) {
+          const derivedRole: UserRole =
+            normalizedEmail.includes('doc') ? 'doctor' :
+            normalizedEmail.includes('asha') ? 'asha' :
+            normalizedEmail.includes('pharm') ? 'pharmacy' :
+            normalizedEmail.includes('deliv') || normalizedEmail.includes('driver') ? 'delivery' :
+            'patient';
+
+          const nameParts = data.user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
+          const formattedName = nameParts.charAt(0).toUpperCase() + nameParts.slice(1);
+
+          fetched = {
+            id: data.user.id,
+            email: data.user.email,
+            role: derivedRole,
+            full_name: formattedName,
+            passcode: password,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as Profile;
+
+          setLocalProfile(fetched, password);
+        }
+
         return { error: null, profile: fetched };
       }
     } catch {
