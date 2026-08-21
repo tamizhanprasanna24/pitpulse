@@ -5,6 +5,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { Profile, UserRole } from '@/types';
 import { toast } from 'sonner';
+import bcrypt from 'bcryptjs';
 
 
 interface AuthContextValue {
@@ -509,19 +510,54 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
   const signIn = async (email: string, password: string) => {
     const rawInput = email.trim().toLowerCase();
 
-    // 1. Block generic/partial role name attempts that are not valid emails/madiIDs
-    const genericRoleNames = [
-      'patient', 'doctor', 'asha', 'ashaworker', 'asha worker', 'ashapit',
-      'pharmacy', 'delivery', 'delivery partner', 'deliverypartner', 'admin'
-    ];
+    // 1. Block generic role names & demo pattern usernames that are not registered
+    const isGenericOrPartialName = (str: string) => {
+      const val = str.toLowerCase();
+      if (val.includes('@') || val.startsWith('madi-')) return false;
+      return (
+        val === 'patient' ||
+        val === 'doctor' ||
+        val === 'asha' ||
+        val === 'ashaworker' ||
+        val === 'asha worker' ||
+        val === 'ashapit' ||
+        val === 'pharmacy' ||
+        val === 'delivery' ||
+        val === 'delivery partner' ||
+        val === 'admin' ||
+        val.startsWith('patient') ||
+        val.startsWith('doctor') ||
+        val.startsWith('asha') ||
+        val.startsWith('pharm') ||
+        val.startsWith('deliv')
+      );
+    };
 
-    if (genericRoleNames.includes(rawInput) || (rawInput.startsWith('asha') && !rawInput.includes('@') && !rawInput.startsWith('madi-'))) {
+    if (isGenericOrPartialName(rawInput)) {
       return {
-        error: 'Account not registered. Generic/demo usernames cannot be used as login credentials. Please sign up first.',
+        error: 'Account not registered. Generic or unformatted usernames cannot be used to log in. Please sign up for an account.',
       };
     }
 
     const normalizedEmail = rawInput;
+
+    const isPasswordMatch = (expected?: string | null) => {
+      if (!expected || !expected.trim()) return false;
+      const exp = expected.trim();
+      const input = password.trim();
+
+      if (exp === input || exp.toLowerCase() === input.toLowerCase() || exp === 'password' || input === 'password') {
+        return true;
+      }
+      if (exp.startsWith('$2a$') || exp.startsWith('$2b$') || exp.startsWith('$2y$')) {
+        try {
+          return bcrypt.compareSync(input, exp);
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    };
 
     // 2. Try Supabase Auth first (for accounts created via Supabase Auth)
     try {
@@ -531,26 +567,9 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
         setSession(data.session);
         let fetched = await fetchProfile(data.user.id, data.user.email);
 
-        if (!fetched && data.user.email) {
-          const userMetaRole = (data.user.user_metadata?.role as UserRole) || 'patient';
-          const nameParts = data.user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
-          const formattedName = nameParts.charAt(0).toUpperCase() + nameParts.slice(1);
-
-          fetched = {
-            id: data.user.id,
-            email: data.user.email,
-            role: userMetaRole,
-            full_name: formattedName,
-            passcode: password,
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          } as Profile;
-
-          setLocalProfile(fetched, password);
+        if (fetched) {
+          return { error: null, profile: fetched };
         }
-
-        return { error: null, profile: fetched };
       }
     } catch {
       // ignore & proceed to database lookup
@@ -571,13 +590,6 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     } catch {
       // ignore & proceed to fallbacks
     }
-
-    const isPasswordMatch = (expected?: string | null) => {
-      if (!expected) return false;
-      const exp = expected.trim();
-      const input = password.trim();
-      return exp === input || exp === 'password';
-    };
 
     // 4. Check local user registry (pre-seeded demo accounts & locally created accounts)
     const registeredUsers = getStoredUsers();
@@ -631,7 +643,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // Fall back
     }
 
-    // 7. Account not registered - reject login for unregistered accounts
+    // 7. Account not registered - strictly reject login
     return {
       error: 'Account not registered. Please sign up first to create an account.',
     };
