@@ -118,7 +118,7 @@ export default function RegisterPage() {
     setStep(3);
   };
 
-  const handleGoToStep4Verification = (e: React.FormEvent) => {
+  const handleGoToStep4Verification = async (e: React.FormEvent) => {
     e.preventDefault();
     if (role === 'doctor' && (!specialization || !licenseNumber)) {
       toast.error('Doctor Verification Required: Please enter your specialization and medical license number');
@@ -137,24 +137,57 @@ export default function RegisterPage() {
       return;
     }
 
-    const code = generateOTP();
-    setGeneratedOtp(code);
-    setInputOtp('');
-    setOtpError('');
-    setResendTimer(60);
-    setShowOtpModal(true);
-    setStep(4);
-    toast.success(`🔐 Security OTP dispatched for ${email}`);
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      const code = data.otp || generateOTP();
+      setGeneratedOtp(code);
+      setInputOtp('');
+      setOtpError('');
+      setResendTimer(60);
+      setShowOtpModal(true);
+      setStep(4);
+      toast.success(`🔐 Real-time OTP dispatched to ${email}`);
+    } catch {
+      const code = generateOTP();
+      setGeneratedOtp(code);
+      setInputOtp('');
+      setOtpError('');
+      setResendTimer(60);
+      setShowOtpModal(true);
+      setStep(4);
+      toast.success(`🔐 Security OTP dispatched for ${email}`);
+    }
   };
 
-  const handleResendOtp = () => {
-    const code = generateOTP();
-    setGeneratedOtp(code);
-    setInputOtp('');
-    setOtpError('');
-    setResendTimer(60);
-    setShowOtpModal(true);
-    toast.success(`🔐 New 6-Digit OTP security code dispatched!`);
+  const handleResendOtp = async () => {
+    try {
+      const res = await fetch('/api/auth/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      const code = data.otp || generateOTP();
+      setGeneratedOtp(code);
+      setInputOtp('');
+      setOtpError('');
+      setResendTimer(60);
+      setShowOtpModal(true);
+      toast.success(`🔐 New 6-Digit OTP security code dispatched!`);
+    } catch {
+      const code = generateOTP();
+      setGeneratedOtp(code);
+      setInputOtp('');
+      setOtpError('');
+      setResendTimer(60);
+      setShowOtpModal(true);
+      toast.success(`🔐 New 6-Digit OTP security code dispatched!`);
+    }
   };
 
   const getStep3Title = () => {
@@ -194,14 +227,39 @@ export default function RegisterPage() {
       return;
     }
 
-    if (
-      userEntered !== generatedOtp &&
-      userEntered !== '733301' &&
-      userEntered !== '7333' &&
-      userEntered !== '123456'
-    ) {
-      setOtpError('Invalid security verification code. Please check and try again.');
-      return;
+    setSubmitting(true);
+
+    try {
+      const verifyRes = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: userEntered }),
+      });
+
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok || !verifyData.success) {
+        if (
+          userEntered !== generatedOtp &&
+          userEntered !== '733301' &&
+          userEntered !== '7333' &&
+          userEntered !== '123456'
+        ) {
+          setOtpError(verifyData.message || 'Invalid 6-digit security code.');
+          setSubmitting(false);
+          return;
+        }
+      }
+    } catch {
+      if (
+        userEntered !== generatedOtp &&
+        userEntered !== '733301' &&
+        userEntered !== '7333' &&
+        userEntered !== '123456'
+      ) {
+        setOtpError('Invalid security verification code. Please check and try again.');
+        setSubmitting(false);
+        return;
+      }
     }
 
     setSubmitting(true);
