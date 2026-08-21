@@ -37,8 +37,7 @@ export function verifyStoredOtp(email: string, code: string): { valid: boolean; 
   const record = otpStore.get(normalizedEmail);
 
   if (!record) {
-    // If fallback demo mode, allow code matching generated code
-    return { valid: true };
+    return { valid: false, reason: 'No active OTP code found for this account. Please click Resend OTP.' };
   }
 
   if (Date.now() > record.expiresAt) {

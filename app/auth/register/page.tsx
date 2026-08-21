@@ -290,25 +290,15 @@ export default function RegisterPage() {
 
       const verifyData = await verifyRes.json();
       if (!verifyRes.ok || !verifyData.success) {
-        if (
-          userEntered !== generatedOtp &&
-          userEntered !== '733301' &&
-          userEntered !== '7333' &&
-          userEntered !== '123456'
-        ) {
-          setOtpError(verifyData.message || 'Invalid 6-digit security code.');
+        if (userEntered !== generatedOtp) {
+          setOtpError(verifyData.message || 'Invalid 6-digit security code. Please enter the exact code generated.');
           setSubmitting(false);
           return;
         }
       }
     } catch {
-      if (
-        userEntered !== generatedOtp &&
-        userEntered !== '733301' &&
-        userEntered !== '7333' &&
-        userEntered !== '123456'
-      ) {
-        setOtpError('Invalid security verification code. Please check and try again.');
+      if (userEntered !== generatedOtp) {
+        setOtpError('Invalid 6-digit security code. Please check your pop-up code and try again.');
         setSubmitting(false);
         return;
       }
