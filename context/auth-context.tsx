@@ -637,36 +637,8 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // Fall back
     }
 
-    // 5. Seamless Cross-Device & Instant Account Activation Fallback
-    const derivedRole: UserRole =
-      normalizedEmail.includes('doc') ? 'doctor' :
-      normalizedEmail.includes('asha') ? 'asha' :
-      normalizedEmail.includes('pharm') ? 'pharmacy' :
-      normalizedEmail.includes('deliv') || normalizedEmail.includes('driver') ? 'delivery' :
-      'patient';
-
-    const rawName = normalizedEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
-    const formattedName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'User';
-
-    const newAccountProfile: Profile = {
-      id: 'usr-' + Date.now(),
-      email: normalizedEmail,
-      role: derivedRole,
-      full_name: formattedName,
-      date_of_birth: '1995-01-01',
-      age: 29,
-      gender: 'male',
-      blood_group: 'O+',
-      mobile_number: '+91 98765 43210',
-      address: 'Registered Location',
-      passcode: password,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Profile;
-
-    setLocalProfile(newAccountProfile, password);
-    return { error: null, profile: newAccountProfile };
+    // 5. Account not registered - reject login for unregistered users
+    return { error: 'Account not registered. Please sign up first.' };
   };
 
   const sendOtp = async (email: string) => {
