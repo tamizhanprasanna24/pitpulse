@@ -43,6 +43,15 @@ export default function RegisterPage() {
   const [role, setRole] = React.useState<UserRole>('patient');
   const [fullName, setFullName] = React.useState('');
   const [dateOfBirth, setDateOfBirth] = React.useState('');
+  const [dobDay, setDobDay] = React.useState('');
+  const [dobMonth, setDobMonth] = React.useState('');
+  const [dobYear, setDobYear] = React.useState('');
+
+  React.useEffect(() => {
+    if (dobYear && dobMonth && dobDay) {
+      setDateOfBirth(`${dobYear}-${dobMonth.padStart(2, '0')}-${dobDay.padStart(2, '0')}`);
+    }
+  }, [dobDay, dobMonth, dobYear]);
   const [gender, setGender] = React.useState<Gender>('male');
   const [bloodGroup, setBloodGroup] = React.useState('');
   const [mobileNumber, setMobileNumber] = React.useState('');
@@ -538,13 +547,42 @@ export default function RegisterPage() {
 
                   <div className="space-y-2">
                     <Label>Date of Birth</Label>
-                    <Input
-                      type="date"
-                      min="1900-01-01"
-                      max={`${new Date().getFullYear()}-12-31`}
-                      value={dateOfBirth}
-                      onChange={(e) => setDateOfBirth(e.target.value)}
-                    />
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Day (01 - 31) */}
+                      <Select value={dobDay} onValueChange={setDobDay}>
+                        <SelectTrigger><SelectValue placeholder="Date" /></SelectTrigger>
+                        <SelectContent className="max-h-56">
+                          {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map((d) => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Month (Jan - Dec) */}
+                      <Select value={dobMonth} onValueChange={setDobMonth}>
+                        <SelectTrigger><SelectValue placeholder="Month" /></SelectTrigger>
+                        <SelectContent className="max-h-56">
+                          {[
+                            { val: '01', name: 'Jan' }, { val: '02', name: 'Feb' }, { val: '03', name: 'Mar' },
+                            { val: '04', name: 'Apr' }, { val: '05', name: 'May' }, { val: '06', name: 'Jun' },
+                            { val: '07', name: 'Jul' }, { val: '08', name: 'Aug' }, { val: '09', name: 'Sep' },
+                            { val: '10', name: 'Oct' }, { val: '11', name: 'Nov' }, { val: '12', name: 'Dec' },
+                          ].map((m) => (
+                            <SelectItem key={m.val} value={m.val}>{m.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {/* Year (4-digit: 2026 down to 1900) */}
+                      <Select value={dobYear} onValueChange={setDobYear}>
+                        <SelectTrigger><SelectValue placeholder="Year" /></SelectTrigger>
+                        <SelectContent className="max-h-56">
+                          {Array.from({ length: 2026 - 1900 + 1 }, (_, i) => String(2026 - i)).map((y) => (
+                            <SelectItem key={y} value={y}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
