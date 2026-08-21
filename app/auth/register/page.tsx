@@ -311,19 +311,6 @@ export default function RegisterPage() {
             {/* STEP 1 */}
             {step === 1 && (
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>madiID (Unique User ID)</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="e.g. MADI-1029 (Optional - auto generated if empty)"
-                      value={madiID}
-                      onChange={(e) => setMadiID(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
 
                 <div className="space-y-2">
                   <Label>Email</Label>
