@@ -29,14 +29,14 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Please enter your email and password');
+    if (!email || !email.trim() || !password || !password.trim()) {
+      toast.error('Please enter your madiID or Email and password.');
       return;
     }
     setSubmitting(true);
 
     try {
-      const res = await signIn(email, password);
+      const res = await signIn(email.trim(), password);
       if (res.error) {
         toast.error(res.error);
         setSubmitting(false);
@@ -48,7 +48,7 @@ export default function LoginPage() {
       const destination = getDashboardRoute(targetRole);
       router.push(destination);
     } catch (err: any) {
-      toast.error(err?.message || 'Login failed. Please check your credentials.');
+      toast.error(err?.message || 'Invalid madiID or password.');
     } finally {
       setSubmitting(false);
     }
@@ -70,20 +70,20 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 p-6">
             <CardTitle className="text-2xl font-semibold tracking-tight">Welcome back</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              Sign in to access your healthcare dashboard
+              Sign in with your madiID or Email to access your healthcare dashboard
             </CardDescription>
           </CardHeader>
 
           <CardContent className="p-6 pt-0">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email or User ID</Label>
+                <Label htmlFor="email">madiID or Email *</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
                     type="text"
-                    placeholder="e.g. patient@gmail.com or doctor"
+                    placeholder="e.g. MADI-8849 or patient@gmail.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"

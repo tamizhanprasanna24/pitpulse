@@ -36,6 +36,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = React.useState(false);
 
   // Form Fields
+  const [madiID, setMadiID] = React.useState('');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [role, setRole] = React.useState<UserRole>('patient');
@@ -209,40 +210,56 @@ export default function RegisterPage() {
       vehicle_type: role === 'delivery' ? vehicleType || null : null,
     };
 
-    try {
-      await signUp(email, password);
-    } catch {
-      // ignore
-    }
-
-    const finalProfile: Profile = {
-      id: user?.id || 'usr-' + Date.now(),
-      ...profileData,
-      passcode: password,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Profile;
+    const finalMadiID = madiID.trim() || ('MADI-' + Math.floor(1000 + Math.random() * 9000));
 
     try {
-      await supabase.from('profiles').upsert(finalProfile, { onConflict: 'email' });
+      const apiRes = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          madiID: finalMadiID,
+          name: fullName,
+          email,
+          password,
+          role,
+          profileData,
+        }),
+      });
+
+      const apiData = await apiRes.json();
+      if (!apiRes.ok || !apiData.success) {
+        toast.error(apiData.message || 'User already exists.');
+        setSubmitting(false);
+        return;
+      }
+
+      const registeredProfile: Profile = apiData.user?.profile || {
+        id: apiData.user?.id || 'usr-' + Date.now(),
+        madiID: finalMadiID,
+        ...profileData,
+        passcode: password,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Profile;
+
+      setLocalProfile(registeredProfile, password);
+      toast.success('🎉 Step 4 Verified! Registration successful!');
+      setSubmitting(false);
+
+      const routeMap: Record<string, string> = {
+        doctor: '/dashboard/doctor',
+        asha: '/dashboard/asha-worker',
+        pharmacy: '/dashboard/pharmacy',
+        delivery: '/dashboard/delivery',
+        patient: '/dashboard/patient',
+      };
+
+      router.push(routeMap[role] || '/dashboard/patient');
     } catch {
-      // ignore
+      toast.error('Registration failed. Please check your credentials.');
+      setSubmitting(false);
     }
-
-    setLocalProfile(finalProfile, password);
-    toast.success('🎉 Step 4 Verified! Registration successful!');
-    setSubmitting(false);
-
-    const routeMap: Record<string, string> = {
-      doctor: '/dashboard/doctor',
-      asha: '/dashboard/asha-worker',
-      pharmacy: '/dashboard/pharmacy',
-      delivery: '/dashboard/delivery',
-      patient: '/dashboard/patient',
-    };
-
-    router.push(routeMap[role] || '/dashboard/patient');
   };
 
   return (
@@ -294,6 +311,20 @@ export default function RegisterPage() {
             {/* STEP 1 */}
             {step === 1 && (
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>madiID (Unique User ID)</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="e.g. MADI-1029 (Optional - auto generated if empty)"
+                      value={madiID}
+                      onChange={(e) => setMadiID(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Email</Label>
                   <div className="relative">

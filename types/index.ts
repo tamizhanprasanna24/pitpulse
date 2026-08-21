@@ -1,8 +1,19 @@
 export type UserRole = 'patient' | 'asha' | 'doctor' | 'pharmacy' | 'delivery';
 export type Gender = 'male' | 'female' | 'others';
 
+export interface UserRecord {
+  id: string;
+  madiID: string;
+  name?: string | null;
+  email?: string | null;
+  passwordHash: string;
+  role: UserRole;
+  createdAt: string;
+}
+
 export interface Profile {
   id: string;
+  madiID?: string | null;
   email: string;
   role: UserRole;
   full_name: string;
@@ -32,6 +43,7 @@ export interface Profile {
   pharmacy_id: string | null;
   vehicle_number: string | null;
   vehicle_type: string | null;
+  passwordHash?: string | null;
   passcode?: string | null;
   is_active: boolean;
   created_at: string;

@@ -521,6 +521,24 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
 
     const normalizedEmail = roleShortcuts[rawInput] || rawInput;
 
+    // 0. Try Real bcrypt Authentication Backend API first
+    try {
+      const apiRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ madiID: normalizedEmail, email: normalizedEmail, password }),
+      });
+      const apiData = await apiRes.json();
+      if (apiRes.ok && apiData.success && apiData.user?.profile) {
+        setLocalProfile(apiData.user.profile, password);
+        return { error: null, profile: apiData.user.profile };
+      } else if (apiRes.status === 401 || (apiData && apiData.message === 'Invalid madiID or password.')) {
+        return { error: 'Invalid madiID or password.' };
+      }
+    } catch {
+      // ignore & proceed
+    }
+
     // 1. Try Supabase Auth first
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
@@ -763,6 +781,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
 
   const signOut = async () => {
     try {
+      await fetch('/api/auth/logout', { method: 'POST' });
       await supabase.auth.signOut();
     } catch {
       // ignore
