@@ -144,6 +144,20 @@ export default function RegisterPage() {
       }
     }
 
+    // Date of Birth 4-digit year validation
+    if (dateOfBirth) {
+      const yearMatch = dateOfBirth.match(/^(\d+)-/);
+      if (yearMatch) {
+        const yearStr = yearMatch[1];
+        const yearNum = Number(yearStr);
+        const currentYear = new Date().getFullYear();
+        if (yearStr.length !== 4 || yearNum < 1900 || yearNum > currentYear) {
+          toast.error(`Invalid Date of Birth: Year must be a 4-digit year (1900 - ${currentYear}).`);
+          return;
+        }
+      }
+    }
+
     setStep(3);
   };
 
@@ -507,7 +521,7 @@ export default function RegisterPage() {
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Priya Sharma (Letters only)"
+                        placeholder="Priya Sharma"
                         value={fullName}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -524,7 +538,13 @@ export default function RegisterPage() {
 
                   <div className="space-y-2">
                     <Label>Date of Birth</Label>
-                    <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+                    <Input
+                      type="date"
+                      min="1900-01-01"
+                      max={`${new Date().getFullYear()}-12-31`}
+                      value={dateOfBirth}
+                      onChange={(e) => setDateOfBirth(e.target.value)}
+                    />
                   </div>
                 </div>
 
@@ -562,7 +582,7 @@ export default function RegisterPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Mobile Number * (10-11 Digits)</Label>
+                    <Label>Mobile Number *</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -577,7 +597,7 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Emergency Contact (10-11 Digits)</Label>
+                    <Label>Emergency Contact</Label>
                     <Input
                       placeholder="e.g. 98765432101"
                       maxLength={11}
