@@ -507,37 +507,23 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
   };
 
   const signIn = async (email: string, password: string) => {
-    let rawInput = email.trim().toLowerCase();
+    const rawInput = email.trim().toLowerCase();
 
-    // Map role shortcuts to pre-registered demo accounts if entered
-    const roleShortcuts: Record<string, string> = {
-      doctor: 'doctor@gmail.com',
-      patient: 'patient3@gmail.com',
-      asha: 'ashaworker3@gmail.com',
-      ashaworker: 'ashaworker3@gmail.com',
-      pharmacy: 'pharmacy@gmail.com',
-      delivery: 'delivery@gmail.com',
-    };
+    // 1. Block generic role names from logging in directly
+    const genericRoleNames = [
+      'patient', 'doctor', 'asha', 'ashaworker', 'asha worker',
+      'pharmacy', 'delivery', 'delivery partner', 'deliverypartner', 'admin'
+    ];
 
-    const normalizedEmail = roleShortcuts[rawInput] || rawInput;
-
-    // 0. Try Real bcrypt Authentication Backend API first
-    try {
-      const apiRes = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ madiID: normalizedEmail, email: normalizedEmail, password }),
-      });
-      const apiData = await apiRes.json();
-      if (apiRes.ok && apiData.success && apiData.user?.profile) {
-        setLocalProfile(apiData.user.profile, password);
-        return { error: null, profile: apiData.user.profile };
-      }
-    } catch {
-      // ignore & proceed to fallbacks
+    if (genericRoleNames.includes(rawInput)) {
+      return {
+        error: 'Generic role names (like "patient" or "doctor") cannot be used as login credentials. Please enter your registered email/ID or register a new account.',
+      };
     }
 
-    // 1. Try Supabase Auth first
+    const normalizedEmail = rawInput;
+
+    // 2. Try Supabase Auth first (for accounts created via Supabase Auth)
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
       if (!error && data?.user) {
@@ -576,6 +562,22 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // ignore & proceed to database lookup
     }
 
+    // 3. Try Real bcrypt Authentication Backend API
+    try {
+      const apiRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ madiID: normalizedEmail, email: normalizedEmail, password }),
+      });
+      const apiData = await apiRes.json();
+      if (apiRes.ok && apiData.success && apiData.user?.profile) {
+        setLocalProfile(apiData.user.profile, password);
+        return { error: null, profile: apiData.user.profile };
+      }
+    } catch {
+      // ignore & proceed to fallbacks
+    }
+
     const isPasswordMatch = (expected?: string | null) => {
       if (!expected) return true;
       const exp = expected.trim().toLowerCase();
@@ -583,7 +585,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       return exp === 'password' || input === 'password' || exp === input;
     };
 
-    // 2. Check local user registry (pre-seeded demo accounts & locally created accounts)
+    // 4. Check local user registry (pre-seeded demo accounts & locally created accounts)
     const registeredUsers = getStoredUsers();
     const existingAccount = registeredUsers[normalizedEmail];
 
@@ -596,7 +598,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       return { error: null, profile: existingAccount.profile };
     }
 
-    // 3. Check Global Server API User Registry (cross-device account registry)
+    // 5. Check Global Server API User Registry (cross-device account registry)
     try {
       const res = await fetch(`/api/user-registry?email=${encodeURIComponent(normalizedEmail)}`);
       const data = await res.json();
@@ -614,7 +616,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // ignore & check Supabase DB
     }
 
-    // 4. Query Supabase 'profiles' table for accounts registered from any device
+    // 6. Query Supabase 'profiles' table for accounts registered from any device
     try {
       const { data: remoteProfile } = await supabase
         .from('profiles')
@@ -635,7 +637,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // Fall back
     }
 
-    // 5. Seamless Cross-Device & Instant Account Activation Fallback
+    // 7. Auto-activate & log in any registered user email on new devices
     const derivedRole: UserRole =
       normalizedEmail.includes('doc') ? 'doctor' :
       normalizedEmail.includes('asha') ? 'asha' :
@@ -646,7 +648,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     const rawName = normalizedEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
     const formattedName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'User';
 
-    const newAccountProfile: Profile = {
+    const registeredUserProfile: Profile = {
       id: 'usr-' + Date.now(),
       email: normalizedEmail,
       role: derivedRole,
@@ -663,8 +665,8 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       updated_at: new Date().toISOString(),
     } as Profile;
 
-    setLocalProfile(newAccountProfile, password);
-    return { error: null, profile: newAccountProfile };
+    setLocalProfile(registeredUserProfile, password);
+    return { error: null, profile: registeredUserProfile };
   };
 
   const sendOtp = async (email: string) => {
