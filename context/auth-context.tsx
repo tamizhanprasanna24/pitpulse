@@ -637,36 +637,10 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // Fall back
     }
 
-    // 7. Auto-activate & log in any registered user email on new devices
-    const derivedRole: UserRole =
-      normalizedEmail.includes('doc') ? 'doctor' :
-      normalizedEmail.includes('asha') ? 'asha' :
-      normalizedEmail.includes('pharm') ? 'pharmacy' :
-      normalizedEmail.includes('deliv') || normalizedEmail.includes('driver') ? 'delivery' :
-      'patient';
-
-    const rawName = normalizedEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
-    const formattedName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'User';
-
-    const registeredUserProfile: Profile = {
-      id: 'usr-' + Date.now(),
-      email: normalizedEmail,
-      role: derivedRole,
-      full_name: formattedName,
-      date_of_birth: '1995-01-01',
-      age: 29,
-      gender: 'male',
-      blood_group: 'O+',
-      mobile_number: '+91 98765 43210',
-      address: 'Registered Location',
-      passcode: password,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as Profile;
-
-    setLocalProfile(registeredUserProfile, password);
-    return { error: null, profile: registeredUserProfile };
+    // 7. Account not registered - reject login for unregistered accounts
+    return {
+      error: 'Account not registered. Please sign up first to create an account.',
+    };
   };
 
   const sendOtp = async (email: string) => {

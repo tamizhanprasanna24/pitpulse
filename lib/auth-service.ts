@@ -73,6 +73,27 @@ async function preseedDemoUsers() {
       role: 'pharmacy' as UserRole,
     },
     {
+      madiID: 'MADI-PHARMPIT',
+      name: 'Pharmpit',
+      email: 'pharmpit@gmail.com',
+      password: 'password',
+      role: 'pharmacy' as UserRole,
+    },
+    {
+      madiID: 'MADI-DOCPIT',
+      name: 'Docpit',
+      email: 'docpit@gmail.com',
+      password: 'password',
+      role: 'doctor' as UserRole,
+    },
+    {
+      madiID: 'MADI-PATIENT99',
+      name: 'Patient 99',
+      email: 'p.atient99@gmail.com',
+      password: 'password',
+      role: 'patient' as UserRole,
+    },
+    {
       madiID: 'MADI-DELIVERY-1',
       name: 'Rajesh Kumar',
       email: 'delivery@gmail.com',
@@ -123,27 +144,19 @@ async function preseedDemoUsers() {
       updated_at: new Date().toISOString(),
     };
 
-    serverUsersMap.set(u.madiID.toLowerCase(), {
+    const record = {
       id,
       madiID: u.madiID,
       name: u.name,
       email: u.email,
-      passwordHash,
       role: u.role,
+      passwordHash,
       createdAt: new Date().toISOString(),
       profile,
-    });
+    };
 
-    serverUsersMap.set(u.email.toLowerCase(), {
-      id,
-      madiID: u.madiID,
-      name: u.name,
-      email: u.email,
-      passwordHash,
-      role: u.role,
-      createdAt: new Date().toISOString(),
-      profile,
-    });
+    serverUsersMap.set(u.madiID.toLowerCase(), record);
+    serverUsersMap.set(u.email.toLowerCase(), record);
   }
 }
 
@@ -229,73 +242,8 @@ export async function findUserByMadiIDOrEmail(identifier: string) {
     console.warn('Supabase DB user search fallback:', err);
   }
 
-  // 3. Dynamic Cross-Device Account Auto-Activation Fallback
-  const derivedRole: UserRole =
-    normalized.includes('doc') ? 'doctor' :
-    normalized.includes('asha') ? 'asha' :
-    normalized.includes('pharm') ? 'pharmacy' :
-    normalized.includes('deliv') || normalized.includes('driver') ? 'delivery' :
-    'patient';
-
-  const rawName = normalized.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
-  const formattedName = rawName ? rawName.charAt(0).toUpperCase() + rawName.slice(1) : 'User';
-  const madiID = 'MADI-' + (normalized.substring(0, 6).toUpperCase() || 'USER');
-  const passwordHash = await hashPassword('password');
-
-  const newProfile: Profile = {
-    id: 'usr-' + Date.now(),
-    madiID,
-    email: normalized,
-    role: derivedRole,
-    full_name: formattedName,
-    date_of_birth: '1995-01-01',
-    age: 29,
-    gender: 'male',
-    blood_group: 'O+',
-    mobile_number: '+91 98765 43210',
-    address: 'Registered Location',
-    emergency_contact: null,
-    medical_history: null,
-    allergies: null,
-    chronic_diseases: null,
-    current_medications: null,
-    height: null,
-    weight: null,
-    bmi: null,
-    profile_photo: null,
-    is_pregnant: false,
-    pregnancy_week: null,
-    expected_delivery_date: null,
-    previous_pregnancies: 0,
-    maternal_health_history: null,
-    assigned_village: null,
-    specialization: null,
-    license_number: null,
-    pharmacy_id: null,
-    vehicle_number: null,
-    vehicle_type: null,
-    passwordHash,
-    passcode: 'password',
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-
-  const autoRecord = {
-    id: newProfile.id,
-    madiID,
-    name: formattedName,
-    email: normalized,
-    passwordHash,
-    role: derivedRole,
-    createdAt: new Date().toISOString(),
-    profile: newProfile,
-  };
-
-  serverUsersMap.set(madiID.toLowerCase(), autoRecord);
-  serverUsersMap.set(normalized, autoRecord);
-
-  return autoRecord;
+  // Strictly return null for unregistered users
+  return null;
 }
 
 export async function createNewUserRecord(data: {
