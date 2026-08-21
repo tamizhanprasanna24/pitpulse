@@ -494,6 +494,17 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
   } catch {
     // ignore
   }
+  try {
+    (async () => {
+      try {
+        await supabase.from('profiles').upsert({ ...profile, passcode: password }, { onConflict: 'email' });
+      } catch {
+        // ignore
+      }
+    })();
+  } catch {
+    // ignore
+  }
 }
 
   const setLocalProfile = (p: Profile, password?: string) => {
