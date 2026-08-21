@@ -31,7 +31,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.trim() || !password || !password.trim()) {
-      toast.error('Please enter your madiID or Email and password.');
+      toast.error('Please enter your email and password.');
       return;
     }
     setSubmitting(true);
@@ -49,7 +49,7 @@ export default function LoginPage() {
       const destination = getDashboardRoute(targetRole);
       router.push(destination);
     } catch (err: any) {
-      toast.error(err?.message || 'Invalid madiID or password.');
+      toast.error(err?.message || 'Invalid email or password.');
     } finally {
       setSubmitting(false);
     }
@@ -71,20 +71,20 @@ export default function LoginPage() {
           <CardHeader className="space-y-1 p-6">
             <CardTitle className="text-2xl font-semibold tracking-tight">Welcome back</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              Sign in with your madiID or Email to access your healthcare dashboard
+              Sign in with your email to access your healthcare dashboard
             </CardDescription>
           </CardHeader>
 
           <CardContent className="p-6 pt-0">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">madiID or Email *</Label>
+                <Label htmlFor="email">Email address *</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="email"
-                    type="text"
-                    placeholder="e.g. MADI-8849 or patient@gmail.com"
+                    type="email"
+                    placeholder="you@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
