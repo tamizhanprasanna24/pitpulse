@@ -111,10 +111,39 @@ export default function RegisterPage() {
   };
 
   const handleNextStep2 = () => {
-    if (!fullName || !mobileNumber) {
-      toast.error('Please enter your full name and mobile number');
+    if (!fullName || !fullName.trim()) {
+      toast.error('Please enter your full name');
       return;
     }
+
+    // Full Name must contain ONLY letters and spaces (no numbers allowed)
+    const nameRegex = /^[a-zA-Z\s]+$/;
+    if (!nameRegex.test(fullName.trim())) {
+      toast.error('Full Name must contain letters only. Numbers are not allowed.');
+      return;
+    }
+
+    if (!mobileNumber || !mobileNumber.trim()) {
+      toast.error('Please enter your mobile number');
+      return;
+    }
+
+    // Mobile Number must contain exactly 10 or 11 digits
+    const digitsOnlyMobile = mobileNumber.replace(/\D/g, '');
+    if (digitsOnlyMobile.length < 10 || digitsOnlyMobile.length > 11) {
+      toast.error('Mobile Number must contain 10 to 11 digits.');
+      return;
+    }
+
+    // Emergency Contact must contain 10 or 11 digits (if provided)
+    if (emergencyContact && emergencyContact.trim()) {
+      const digitsOnlyEmergency = emergencyContact.replace(/\D/g, '');
+      if (digitsOnlyEmergency.length < 10 || digitsOnlyEmergency.length > 11) {
+        toast.error('Emergency Contact must contain 10 to 11 digits.');
+        return;
+      }
+    }
+
     setStep(3);
   };
 
@@ -478,9 +507,15 @@ export default function RegisterPage() {
                     <div className="relative">
                       <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="Priya Sharma"
+                        placeholder="Priya Sharma (Letters only)"
                         value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (/\d/.test(val)) {
+                            toast.error('Numbers are not allowed in Full Name');
+                          }
+                          setFullName(val.replace(/[^a-zA-Z\s]/g, ''));
+                        }}
                         className="pl-10"
                         required
                       />
@@ -527,25 +562,28 @@ export default function RegisterPage() {
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label>Mobile Number *</Label>
+                    <Label>Mobile Number * (10-11 Digits)</Label>
                     <div className="relative">
                       <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
-                        placeholder="+91 98765 43210"
+                        placeholder="e.g. 98765432101"
+                        maxLength={11}
                         value={mobileNumber}
-                        onChange={(e) => setMobileNumber(e.target.value)}
-                        className="pl-10"
+                        onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, ''))}
+                        className="pl-10 font-mono"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Emergency Contact</Label>
+                    <Label>Emergency Contact (10-11 Digits)</Label>
                     <Input
-                      placeholder="Contact number"
+                      placeholder="e.g. 98765432101"
+                      maxLength={11}
                       value={emergencyContact}
-                      onChange={(e) => setEmergencyContact(e.target.value)}
+                      onChange={(e) => setEmergencyContact(e.target.value.replace(/\D/g, ''))}
+                      className="font-mono"
                     />
                   </div>
                 </div>
