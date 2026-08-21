@@ -546,7 +546,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       const exp = expected.trim();
       const input = password.trim();
 
-      if (exp === input || exp.toLowerCase() === input.toLowerCase() || exp === 'password' || input === 'password') {
+      if (exp === input) {
         return true;
       }
       if (exp.startsWith('$2a$') || exp.startsWith('$2b$') || exp.startsWith('$2y$')) {

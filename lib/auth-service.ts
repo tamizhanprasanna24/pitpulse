@@ -169,8 +169,7 @@ export async function hashPassword(password: string): Promise<string> {
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   if (!hash) return false;
-  // Support plaintext fallback for legacy seed records
-  if (hash === password || hash === 'password') return true;
+  if (hash === password) return true;
   try {
     return await bcrypt.compare(password, hash);
   } catch {
@@ -220,7 +219,7 @@ export async function findUserByMadiIDOrEmail(identifier: string) {
     if (profile) {
       const p = profile as Profile;
       const madiID = p.madiID || ('MADI-' + p.id.toUpperCase());
-      const passwordHash = p.passwordHash || (p.passcode ? await hashPassword(p.passcode) : await hashPassword('password'));
+      const passwordHash = p.passwordHash || (p.passcode ? await hashPassword(p.passcode) : '');
 
       const record = {
         id: p.id,
