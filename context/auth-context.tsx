@@ -766,8 +766,12 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(LOCAL_STORAGE_PROFILE_KEY);
       localStorage.removeItem(LOCAL_STORAGE_OTP_KEY);
+      sessionStorage.clear();
     }
-    toast.info('You have signed out');
+    toast.info('You have signed out safely');
+    if (typeof window !== 'undefined') {
+      window.location.href = '/auth/login';
+    }
   };
 
   const refreshProfile = async () => {
