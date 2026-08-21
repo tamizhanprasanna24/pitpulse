@@ -651,8 +651,8 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
 
       if (remoteProfile) {
         const p = remoteProfile as Profile;
-        const expectedPass = p.passcode;
-        if (!isPasswordMatch(expectedPass)) {
+        const expectedPass = p.passcode || (p as any).password || (p as any).passwordHash;
+        if (expectedPass && !isPasswordMatch(expectedPass)) {
           return { error: 'Invalid email or password.' };
         }
         setLocalProfile(p, password);

@@ -133,7 +133,43 @@ export async function POST(request: Request) {
     globalUserRegistry[normalizedEmail] = userAcc;
 
     try {
-      await supabase.from('profiles').upsert(updatedProfile, { onConflict: 'email' });
+      const cleanDbProfile = {
+        id: updatedProfile.id || ('usr-' + Date.now()),
+        email: normalizedEmail,
+        role: updatedProfile.role || 'patient',
+        full_name: updatedProfile.full_name || normalizedEmail.split('@')[0],
+        passcode: effectivePass,
+        date_of_birth: updatedProfile.date_of_birth || null,
+        age: updatedProfile.age || null,
+        gender: updatedProfile.gender || null,
+        blood_group: updatedProfile.blood_group || null,
+        mobile_number: updatedProfile.mobile_number || null,
+        address: updatedProfile.address || null,
+        emergency_contact: updatedProfile.emergency_contact || null,
+        medical_history: updatedProfile.medical_history || null,
+        allergies: updatedProfile.allergies || null,
+        chronic_diseases: updatedProfile.chronic_diseases || null,
+        current_medications: updatedProfile.current_medications || null,
+        height: updatedProfile.height || null,
+        weight: updatedProfile.weight || null,
+        bmi: updatedProfile.bmi || null,
+        profile_photo: updatedProfile.profile_photo || null,
+        is_pregnant: updatedProfile.is_pregnant || false,
+        pregnancy_week: updatedProfile.pregnancy_week || null,
+        expected_delivery_date: updatedProfile.expected_delivery_date || null,
+        previous_pregnancies: updatedProfile.previous_pregnancies || 0,
+        maternal_health_history: updatedProfile.maternal_health_history || null,
+        assigned_village: updatedProfile.assigned_village || null,
+        specialization: updatedProfile.specialization || null,
+        license_number: updatedProfile.license_number || null,
+        pharmacy_id: updatedProfile.pharmacy_id || null,
+        vehicle_number: updatedProfile.vehicle_number || null,
+        vehicle_type: updatedProfile.vehicle_type || null,
+        is_active: true,
+        created_at: updatedProfile.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      await supabase.from('profiles').upsert(cleanDbProfile, { onConflict: 'email' });
     } catch {
       // ignore
     }

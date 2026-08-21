@@ -219,7 +219,8 @@ export async function findUserByMadiIDOrEmail(identifier: string) {
     if (profile) {
       const p = profile as Profile;
       const madiID = p.madiID || ('MADI-' + p.id.toUpperCase());
-      const passwordHash = p.passwordHash || (p.passcode ? await hashPassword(p.passcode) : '');
+      const passcode = p.passcode || (p as any).password || (p as any).passwordHash;
+      const passwordHash = p.passwordHash || (passcode ? await hashPassword(passcode) : '');
 
       const record = {
         id: p.id,
@@ -229,7 +230,7 @@ export async function findUserByMadiIDOrEmail(identifier: string) {
         passwordHash,
         role: p.role,
         createdAt: p.created_at || new Date().toISOString(),
-        profile: p,
+        profile: { ...p, passcode: passcode || p.passcode },
       };
 
       serverUsersMap.set(madiID.toLowerCase(), record);
@@ -328,11 +329,68 @@ export async function createNewUserRecord(data: {
   serverUsersMap.set(normalizedMadiID.toLowerCase(), userRecord);
   serverUsersMap.set(normalizedEmail, userRecord);
 
-  // Persist to Supabase database profiles table
+  // Persist to Supabase database profiles table & Supabase Auth safely
   try {
-    await supabase.from('profiles').upsert(profile, { onConflict: 'email' });
-  } catch {
-    // Ignore persistence error if offline
+    try {
+      await supabase.auth.signUp({
+        email: normalizedEmail,
+        password: data.password,
+        options: { data: { full_name: name, role } },
+      });
+    } catch {
+      // ignore
+    }
+
+    const cleanDbProfile = {
+      id: profile.id,
+      email: profile.email,
+      role: profile.role,
+      full_name: profile.full_name,
+      passcode: data.password,
+      date_of_birth: profile.date_of_birth,
+      age: profile.age,
+      gender: profile.gender,
+      blood_group: profile.blood_group,
+      mobile_number: profile.mobile_number,
+      address: profile.address,
+      emergency_contact: profile.emergency_contact,
+      medical_history: profile.medical_history,
+      allergies: profile.allergies,
+      chronic_diseases: profile.chronic_diseases,
+      current_medications: profile.current_medications,
+      height: profile.height,
+      weight: profile.weight,
+      bmi: profile.bmi,
+      profile_photo: profile.profile_photo,
+      is_pregnant: profile.is_pregnant,
+      pregnancy_week: profile.pregnancy_week,
+      expected_delivery_date: profile.expected_delivery_date,
+      previous_pregnancies: profile.previous_pregnancies,
+      maternal_health_history: profile.maternal_health_history,
+      assigned_village: profile.assigned_village,
+      specialization: profile.specialization,
+      license_number: profile.license_number,
+      pharmacy_id: profile.pharmacy_id,
+      vehicle_number: profile.vehicle_number,
+      vehicle_type: profile.vehicle_type,
+      is_active: true,
+      created_at: profile.created_at,
+      updated_at: profile.updated_at,
+    };
+
+    const { error: dbError } = await supabase.from('profiles').upsert(cleanDbProfile, { onConflict: 'email' });
+    if (dbError) {
+      console.warn('Upsert cleanDbProfile notice:', dbError.message);
+      await supabase.from('profiles').upsert({
+        id: profile.id,
+        email: profile.email,
+        role: profile.role,
+        full_name: profile.full_name,
+        passcode: data.password,
+      }, { onConflict: 'email' });
+    }
+  } catch (err) {
+    console.warn('Supabase profile persistence notice:', err);
   }
 
   return userRecord;
