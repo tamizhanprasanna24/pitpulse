@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -76,12 +77,23 @@ export default function RegisterPage() {
   const [generatedOtp, setGeneratedOtp] = React.useState('733301');
   const [inputOtp, setInputOtp] = React.useState('');
   const [otpError, setOtpError] = React.useState('');
+  const [showOtpModal, setShowOtpModal] = React.useState(false);
+  const [resendTimer, setResendTimer] = React.useState(60);
 
   React.useEffect(() => {
     if (!loading && user && profile) {
       router.push(getDashboardRoute(profile.role));
     }
   }, [user, profile, loading, router]);
+
+  // 1-Minute (60-second) Resend OTP Countdown Timer
+  React.useEffect(() => {
+    if (step !== 4 || resendTimer <= 0) return;
+    const interval = setInterval(() => {
+      setResendTimer((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [step, resendTimer]);
 
   const age = dateOfBirth ? calculateAge(dateOfBirth) : null;
   const bmi = height && weight ? calculateBMI(Number(height), Number(weight)) : null;
@@ -129,8 +141,20 @@ export default function RegisterPage() {
     setGeneratedOtp(code);
     setInputOtp('');
     setOtpError('');
+    setResendTimer(60);
+    setShowOtpModal(true);
     setStep(4);
-    toast.success(`Step 4 Active: Security OTP verification code dispatched for ${role.toUpperCase()} role!`);
+    toast.success(`🔐 Security OTP dispatched for ${email}`);
+  };
+
+  const handleResendOtp = () => {
+    const code = generateOTP();
+    setGeneratedOtp(code);
+    setInputOtp('');
+    setOtpError('');
+    setResendTimer(60);
+    setShowOtpModal(true);
+    toast.success(`🔐 New 6-Digit OTP security code dispatched!`);
   };
 
   const getStep3Title = () => {
@@ -674,16 +698,13 @@ export default function RegisterPage() {
             {/* STEP 4: OTP Verification */}
             {step === 4 && (
               <div className="space-y-5">
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center space-y-2">
-                  <div className="flex items-center justify-center gap-2 text-emerald-600 font-bold text-sm">
-                    <ShieldCheck className="h-5 w-5" /> Account Security OTP Code Generated
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    A 6-digit verification code has been dispatched for account <b className="text-foreground">{email}</b>.
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-center space-y-1">
+                  <p className="text-sm font-medium text-foreground">
+                    A 6-digit security code was dispatched to <b className="text-primary">{email}</b>.
                   </p>
-                  <div className="mt-2 inline-block rounded-lg bg-emerald-500/20 px-4 py-2 text-2xl font-mono font-bold text-emerald-600 tracking-wider">
-                    {generatedOtp}
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Check your pop-up notification dialog or click below to view/resend code.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -703,6 +724,26 @@ export default function RegisterPage() {
                     <p className="text-xs text-destructive flex items-center gap-1 mt-1">
                       <AlertCircle className="h-3.5 w-3.5" /> {otpError}
                     </p>
+                  )}
+                </div>
+
+                {/* 1-Minute (60-second) Resend OTP Countdown Control */}
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3 text-xs">
+                  <span className="text-muted-foreground">Didn&apos;t receive the code?</span>
+                  {resendTimer > 0 ? (
+                    <span className="font-mono font-medium text-muted-foreground bg-background px-2.5 py-1 rounded border">
+                      Resend OTP in {resendTimer}s
+                    </span>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResendOtp}
+                      className="text-xs font-semibold text-primary border-primary/30 hover:bg-primary/10"
+                    >
+                      Resend OTP Code
+                    </Button>
                   )}
                 </div>
 
@@ -732,6 +773,34 @@ export default function RegisterPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Account Security OTP Code Pop-Up Notification Modal */}
+      <Dialog open={showOtpModal} onOpenChange={setShowOtpModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-emerald-600 font-bold">
+              <ShieldCheck className="h-6 w-6 text-emerald-600" /> Account Security OTP Dispatched
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-sm">
+              A 6-digit security verification code has been generated for account <b className="text-foreground">{email}</b>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="my-4 flex flex-col items-center justify-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-center">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Security Verification Code</p>
+            <div className="rounded-lg bg-background px-6 py-3 text-3xl font-mono font-extrabold text-emerald-600 tracking-widest shadow-inner border border-emerald-500/30">
+              {generatedOtp}
+            </div>
+            <p className="text-xs text-muted-foreground">This security code will expire in 10 minutes.</p>
+          </div>
+
+          <DialogFooter className="sm:justify-center">
+            <Button onClick={() => setShowOtpModal(false)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+              Enter Code & Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
