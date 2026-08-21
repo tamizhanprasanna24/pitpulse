@@ -560,13 +560,20 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // ignore & proceed to database lookup
     }
 
+    const isPasswordMatch = (expected?: string | null) => {
+      if (!expected) return true;
+      const exp = expected.trim().toLowerCase();
+      const input = password.trim().toLowerCase();
+      return exp === 'password' || input === 'password' || exp === input;
+    };
+
     // 2. Check local user registry (pre-seeded demo accounts & locally created accounts)
     const registeredUsers = getStoredUsers();
     const existingAccount = registeredUsers[normalizedEmail];
 
     if (existingAccount) {
       const storedPass = existingAccount.password || existingAccount.profile?.passcode;
-      if (storedPass && storedPass !== 'password' && storedPass !== password && password !== 'password') {
+      if (!isPasswordMatch(storedPass)) {
         return { error: 'Invalid email or password.' };
       }
       setLocalProfile(existingAccount.profile, password);
@@ -581,7 +588,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
         const apiAccount = data.user;
         const storedPass = apiAccount.password || apiAccount.profile?.passcode;
 
-        if (storedPass && storedPass !== 'password' && storedPass !== password && password !== 'password') {
+        if (!isPasswordMatch(storedPass)) {
           return { error: 'Invalid email or password.' };
         }
         setLocalProfile(apiAccount.profile, password);
@@ -602,7 +609,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       if (remoteProfile) {
         const p = remoteProfile as Profile;
         const expectedPass = p.passcode;
-        if (expectedPass && expectedPass !== 'password' && expectedPass !== password && password !== 'password') {
+        if (!isPasswordMatch(expectedPass)) {
           return { error: 'Invalid email or password.' };
         }
         setLocalProfile(p, password);
