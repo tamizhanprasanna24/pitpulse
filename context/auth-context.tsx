@@ -509,15 +509,15 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
   const signIn = async (email: string, password: string) => {
     const rawInput = email.trim().toLowerCase();
 
-    // 1. Block generic role names from logging in directly
+    // 1. Block generic/partial role name attempts that are not valid emails/madiIDs
     const genericRoleNames = [
-      'patient', 'doctor', 'asha', 'ashaworker', 'asha worker',
+      'patient', 'doctor', 'asha', 'ashaworker', 'asha worker', 'ashapit',
       'pharmacy', 'delivery', 'delivery partner', 'deliverypartner', 'admin'
     ];
 
-    if (genericRoleNames.includes(rawInput)) {
+    if (genericRoleNames.includes(rawInput) || (rawInput.startsWith('asha') && !rawInput.includes('@') && !rawInput.startsWith('madi-'))) {
       return {
-        error: 'Generic role names (like "patient" or "doctor") cannot be used as login credentials. Please enter your registered email/ID or register a new account.',
+        error: 'Account not registered. Generic/demo usernames cannot be used as login credentials. Please sign up first.',
       };
     }
 
@@ -532,20 +532,14 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
         let fetched = await fetchProfile(data.user.id, data.user.email);
 
         if (!fetched && data.user.email) {
-          const derivedRole: UserRole =
-            normalizedEmail.includes('doc') ? 'doctor' :
-            normalizedEmail.includes('asha') ? 'asha' :
-            normalizedEmail.includes('pharm') ? 'pharmacy' :
-            normalizedEmail.includes('deliv') || normalizedEmail.includes('driver') ? 'delivery' :
-            'patient';
-
+          const userMetaRole = (data.user.user_metadata?.role as UserRole) || 'patient';
           const nameParts = data.user.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
           const formattedName = nameParts.charAt(0).toUpperCase() + nameParts.slice(1);
 
           fetched = {
             id: data.user.id,
             email: data.user.email,
-            role: derivedRole,
+            role: userMetaRole,
             full_name: formattedName,
             passcode: password,
             is_active: true,
@@ -579,10 +573,10 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     }
 
     const isPasswordMatch = (expected?: string | null) => {
-      if (!expected) return true;
-      const exp = expected.trim().toLowerCase();
-      const input = password.trim().toLowerCase();
-      return exp === 'password' || input === 'password' || exp === input;
+      if (!expected) return false;
+      const exp = expected.trim();
+      const input = password.trim();
+      return exp === input || exp === 'password';
     };
 
     // 4. Check local user registry (pre-seeded demo accounts & locally created accounts)
