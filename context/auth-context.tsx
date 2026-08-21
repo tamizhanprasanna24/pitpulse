@@ -508,6 +508,14 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
   };
 
   const signIn = async (email: string, password: string) => {
+    // Purge any existing session so new login attempts evaluate fresh typed credentials
+    setProfile(null);
+    setUser(null);
+    setSession(null);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(LOCAL_STORAGE_PROFILE_KEY);
+    }
+
     const rawInput = email.trim().toLowerCase();
 
     // 1. Block generic role names & demo pattern usernames that are not registered

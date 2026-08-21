@@ -22,10 +22,11 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    if (!loading && user && profile) {
+    // Only auto-redirect if form fields are empty and active session exists
+    if (!loading && user && profile && !email.trim() && !password.trim()) {
       router.push(getDashboardRoute(profile.role));
     }
-  }, [user, profile, loading, router]);
+  }, [user, profile, loading, router, email, password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
