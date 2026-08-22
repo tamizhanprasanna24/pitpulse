@@ -199,13 +199,22 @@ export async function findUserByMadiIDOrEmail(identifier: string) {
 
   // 2. Query Supabase database
   try {
-    const { data: profileByEmail } = await supabase
+    let { data: profileByEmail } = await supabase
       .from('profiles')
       .select('*')
       .ilike('email', normalized)
       .maybeSingle();
 
     let profile = profileByEmail;
+
+    if (!profile) {
+      const { data: profileByEq } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', normalized)
+        .maybeSingle();
+      profile = profileByEq;
+    }
 
     if (!profile) {
       const { data: profileByMadi } = await supabase

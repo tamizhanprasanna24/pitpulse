@@ -643,11 +643,20 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
 
     // 6. Query Supabase 'profiles' table for accounts registered from any device
     try {
-      const { data: remoteProfile } = await supabase
+      let { data: remoteProfile } = await supabase
         .from('profiles')
         .select('*')
         .ilike('email', normalizedEmail)
         .maybeSingle();
+
+      if (!remoteProfile) {
+        const { data: profileEq } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+        remoteProfile = profileEq;
+      }
 
       if (remoteProfile) {
         const p = remoteProfile as Profile;
