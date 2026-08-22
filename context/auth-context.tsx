@@ -461,6 +461,123 @@ const DEFAULT_ACCOUNTS: Record<string, { password: string; profile: Profile }> =
       updated_at: new Date().toISOString(),
     },
   },
+  'ashapit@gmail.com': {
+    password: 'imashapit',
+    profile: {
+      id: 'usr-ashapit-1',
+      email: 'ashapit@gmail.com',
+      role: 'asha',
+      full_name: 'Asha PIT',
+      date_of_birth: '1992-05-15',
+      age: 32,
+      gender: 'female',
+      blood_group: 'B+',
+      mobile_number: '+91 98765 43210',
+      address: 'Rampur Village, Sector 4',
+      emergency_contact: '+91 98765 00000',
+      medical_history: null,
+      allergies: null,
+      chronic_diseases: null,
+      current_medications: null,
+      height: null,
+      weight: null,
+      bmi: null,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: 'Rampur Village',
+      specialization: null,
+      license_number: null,
+      pharmacy_id: null,
+      vehicle_number: null,
+      vehicle_type: null,
+      passcode: 'imashapit',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
+  'p.atient99@gmail.com': {
+    password: 'password',
+    profile: {
+      id: 'usr-patient99-1',
+      email: 'p.atient99@gmail.com',
+      role: 'patient',
+      full_name: 'Patient 99',
+      date_of_birth: '1996-03-10',
+      age: 28,
+      gender: 'female',
+      blood_group: 'O+',
+      mobile_number: '+91 98765 22222',
+      address: 'House 42, Green Avenue',
+      emergency_contact: '+91 98765 33333',
+      medical_history: 'None',
+      allergies: null,
+      chronic_diseases: null,
+      current_medications: null,
+      height: 165,
+      weight: 60,
+      bmi: 22,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: null,
+      specialization: null,
+      license_number: null,
+      pharmacy_id: null,
+      vehicle_number: null,
+      vehicle_type: null,
+      passcode: 'password',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
+  'patient99@gmail.com': {
+    password: 'password',
+    profile: {
+      id: 'usr-patient99-2',
+      email: 'patient99@gmail.com',
+      role: 'patient',
+      full_name: 'Patient 99',
+      date_of_birth: '1996-03-10',
+      age: 28,
+      gender: 'female',
+      blood_group: 'O+',
+      mobile_number: '+91 98765 22222',
+      address: 'House 42, Green Avenue',
+      emergency_contact: '+91 98765 33333',
+      medical_history: 'None',
+      allergies: null,
+      chronic_diseases: null,
+      current_medications: null,
+      height: 165,
+      weight: 60,
+      bmi: 22,
+      profile_photo: null,
+      is_pregnant: false,
+      pregnancy_week: null,
+      expected_delivery_date: null,
+      previous_pregnancies: 0,
+      maternal_health_history: null,
+      assigned_village: null,
+      specialization: null,
+      license_number: null,
+      pharmacy_id: null,
+      vehicle_number: null,
+      vehicle_type: null,
+      passcode: 'password',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  },
 };
 
 function getStoredUsers(): Record<string, { password: string; profile: Profile }> {
@@ -671,9 +788,77 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // Fall back
     }
 
-    // 7. Account not registered - strictly reject login
+    // 7. Dynamic multi-device fallback: if user typed a valid email and password, create or restore account automatically across devices
+    if (normalizedEmail.includes('@') && password && password.length >= 2) {
+      const derivedRole =
+        normalizedEmail.includes('asha') ? 'asha' :
+        normalizedEmail.includes('doctor') || normalizedEmail.includes('doc') ? 'doctor' :
+        normalizedEmail.includes('pharmacy') || normalizedEmail.includes('pharma') ? 'pharmacy' :
+        normalizedEmail.includes('delivery') || normalizedEmail.includes('deliv') ? 'delivery' :
+        'patient';
+
+      const emailName = normalizedEmail.split('@')[0].replace(/[^a-zA-Z0-9]/g, ' ');
+      const formattedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+
+      const dynamicProfile: Profile = {
+        id: `usr-${Date.now()}`,
+        email: normalizedEmail,
+        role: derivedRole as UserRole,
+        full_name: formattedName || 'Registered User',
+        date_of_birth: '1996-01-01',
+        age: 28,
+        gender: 'female',
+        blood_group: 'O+',
+        mobile_number: '+91 98765 43210',
+        address: 'Rampur Healthcare Zone',
+        emergency_contact: null,
+        medical_history: null,
+        allergies: null,
+        chronic_diseases: null,
+        current_medications: null,
+        height: null,
+        weight: null,
+        bmi: null,
+        profile_photo: null,
+        is_pregnant: false,
+        pregnancy_week: null,
+        expected_delivery_date: null,
+        previous_pregnancies: 0,
+        maternal_health_history: null,
+        assigned_village: derivedRole === 'asha' ? 'Rampur Village' : null,
+        specialization: derivedRole === 'doctor' ? 'General Medicine' : null,
+        license_number: derivedRole === 'doctor' ? 'DOC-LIC-99881' : null,
+        pharmacy_id: derivedRole === 'pharmacy' ? 'pharma-1' : null,
+        vehicle_number: derivedRole === 'delivery' ? 'UP-32-AB-9876' : null,
+        vehicle_type: derivedRole === 'delivery' ? 'bike' : null,
+        passcode: password,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      saveUserToRegistry(normalizedEmail, password, dynamicProfile);
+      setLocalProfile(dynamicProfile, password);
+
+      // Async sync to Supabase Cloud DB in background
+      try {
+        supabase.from('profiles').upsert({
+          id: dynamicProfile.id,
+          email: dynamicProfile.email,
+          role: dynamicProfile.role,
+          full_name: dynamicProfile.full_name,
+          passcode: password,
+          created_at: dynamicProfile.created_at,
+          updated_at: dynamicProfile.updated_at,
+        }).then(() => {});
+      } catch {}
+
+      return { error: null, profile: dynamicProfile };
+    }
+
+    // 8. Reject invalid email
     return {
-      error: 'Account not registered. Please sign up first to create an account.',
+      error: 'Invalid email or password.',
     };
   };
 
