@@ -94,20 +94,6 @@ async function preseedDemoUsers() {
       role: 'patient' as UserRole,
     },
     {
-      madiID: 'MADI-PATIENT99-ALT',
-      name: 'Patient 99',
-      email: 'patient99@gmail.com',
-      password: 'password',
-      role: 'patient' as UserRole,
-    },
-    {
-      madiID: 'MADI-ASHAPIT',
-      name: 'Asha PIT',
-      email: 'ashapit@gmail.com',
-      password: 'imashapit',
-      role: 'asha' as UserRole,
-    },
-    {
       madiID: 'MADI-DELIVERY-1',
       name: 'Rajesh Kumar',
       email: 'delivery@gmail.com',
