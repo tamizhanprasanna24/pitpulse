@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 import { registerDiagnosticCentre } from '@/lib/diagnostic-service';
 
 export async function POST(request: Request) {
@@ -37,6 +38,33 @@ export async function POST(request: Request) {
         { success: false, message: 'Password must be at least 6 characters long.' },
         { status: 400 }
       );
+    }
+
+    // Check if email is already registered as ASHA Worker, Patient, Doctor, Pharmacy, or Delivery Partner
+    try {
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('role, full_name')
+        .eq('email', official_email.toLowerCase())
+        .maybeSingle();
+
+      if (existingProfile && existingProfile.role !== 'diagnostic') {
+        const roleName =
+          existingProfile.role === 'asha' ? 'ASHA Worker' :
+          existingProfile.role === 'doctor' ? 'Doctor / Admin' :
+          existingProfile.role === 'pharmacy' ? 'Pharmacy' :
+          existingProfile.role === 'delivery' ? 'Delivery Partner' : 'Patient';
+
+        return NextResponse.json(
+          {
+            success: false,
+            message: `This email (${official_email}) is already registered as an ${roleName} account. An existing ${roleName} account cannot register as a Diagnostic Centre. Please use a unique official email for your Diagnostic Centre.`
+          },
+          { status: 400 }
+        );
+      }
+    } catch {
+      // ignore db error fallback
     }
 
     const { centre, adminStaff } = await registerDiagnosticCentre({

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
 import { authenticateDiagnosticStaff, diagnosticCentresStore, diagnosticStaffStore } from '@/lib/diagnostic-service';
 import type { DiagnosticCentre, DiagnosticStaff } from '@/types';
 
@@ -22,6 +23,34 @@ export async function POST(request: Request) {
     // If identifier is an email (e.g. info@apollodiagnostics.in), resolve Centre ID and Staff ID
     if (inputIdentifier.includes('@')) {
       const cleanEmail = inputIdentifier.toLowerCase();
+
+      // Check if this email is an ASHA Worker, Patient, Doctor, Pharmacy, or Delivery Partner account
+      try {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('role, full_name')
+          .eq('email', cleanEmail)
+          .maybeSingle();
+
+        if (userProfile && userProfile.role !== 'diagnostic') {
+          const roleLabel =
+            userProfile.role === 'asha' ? 'ASHA Worker' :
+            userProfile.role === 'doctor' ? 'Doctor / Admin' :
+            userProfile.role === 'pharmacy' ? 'Pharmacy' :
+            userProfile.role === 'delivery' ? 'Delivery Partner' : 'Patient';
+
+          return NextResponse.json(
+            {
+              success: false,
+              message: `Access Denied: This account (${cleanEmail}) is registered as an ${roleLabel} account, not a Diagnostic Centre. Please switch to the "Standard Portal" tab to sign in.`
+            },
+            { status: 403 }
+          );
+        }
+      } catch {
+        // ignore fallback
+      }
+
       let matchedCentre: DiagnosticCentre | undefined;
       let matchedStaff: DiagnosticStaff | undefined;
 

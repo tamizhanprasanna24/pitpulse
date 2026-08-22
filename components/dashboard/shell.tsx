@@ -173,16 +173,23 @@ export function DashboardShell({ children, title, description }: DashboardShellP
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
-  // Infer active role from current URL route path to guarantee 100% portal alignment across all screens
+  // Infer active role prioritizing authenticated profile role to enforce 100% portal security
   const pathParts = (pathname || '').split('/');
   const routeRole = pathParts[2] as UserRole;
   const validRoles: UserRole[] = ['patient', 'doctor', 'asha', 'pharmacy', 'delivery', 'diagnostic'];
-  const currentRole = (validRoles.includes(routeRole) ? routeRole : profile?.role || 'patient') as UserRole;
+  const currentRole = (profile?.role && validRoles.includes(profile.role) ? profile.role : (validRoles.includes(routeRole) ? routeRole : 'patient')) as UserRole;
 
   // Strict Role Privacy & Access Guard: Lock users to their registered role portal only
   React.useEffect(() => {
     if (profile && validRoles.includes(routeRole) && profile.role !== routeRole) {
-      toast.error(`🔒 Privacy Control: Your account is registered as ${profile.role.toUpperCase()}. Access to ${routeRole.toUpperCase()} portal is restricted.`);
+      const formattedUserRole =
+        profile.role === 'asha' ? 'ASHA Worker' :
+        profile.role === 'doctor' ? 'Doctor / Admin' :
+        profile.role === 'pharmacy' ? 'Pharmacy' :
+        profile.role === 'delivery' ? 'Delivery Partner' :
+        profile.role === 'diagnostic' ? 'Diagnostic Centre' : 'Patient';
+
+      toast.error(`🔒 Access Restricted: Your account is registered as ${formattedUserRole}. Access to ${routeRole.toUpperCase()} portal is restricted.`);
       router.replace(getDashboardRoute(profile.role));
     }
   }, [profile, routeRole, router]);
