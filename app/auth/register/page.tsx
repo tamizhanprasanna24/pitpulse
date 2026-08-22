@@ -27,6 +27,7 @@ const roles: { value: UserRole; label: string; icon: typeof Heart; desc: string 
   { value: 'asha', label: 'ASHA Worker', icon: Users, desc: 'Village health, home visits, surveys' },
   { value: 'pharmacy', label: 'Pharmacy', icon: Pill, desc: 'Inventory, orders, delivery management' },
   { value: 'delivery', label: 'Delivery Partner', icon: Truck, desc: 'Deliver medicines, track earnings' },
+  { value: 'diagnostic', label: 'Diagnostic Centre', icon: ShieldCheck, desc: 'Pathology & Radiology Labs, Test Bookings, Sample Collection' },
 ];
 
 export default function RegisterPage() {

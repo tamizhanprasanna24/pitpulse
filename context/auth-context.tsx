@@ -547,6 +547,7 @@ export function getDashboardRoute(role: UserRole | undefined | null): string {
     case 'doctor': return '/dashboard/doctor';
     case 'pharmacy': return '/dashboard/pharmacy';
     case 'delivery': return '/dashboard/delivery';
+    case 'diagnostic': return '/dashboard/diagnostic';
     default: return '/auth/login';
   }
 }

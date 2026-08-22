@@ -83,6 +83,16 @@ const navByRole: Record<UserRole, NavItem[]> = {
     { label: 'Earnings', href: '/dashboard/delivery/earnings', icon: Activity },
     { label: 'Delivery History', href: '/dashboard/delivery/history', icon: Activity },
   ],
+  diagnostic: [
+    { label: 'Dashboard', href: '/dashboard/diagnostic', icon: Home },
+    { label: 'Profile', href: '/dashboard/diagnostic/profile', icon: User },
+    { label: 'Test Bookings', href: '/dashboard/diagnostic/bookings', icon: Activity },
+    { label: 'Sample Collection', href: '/dashboard/diagnostic/samples', icon: Activity },
+    { label: 'Tests Catalogue', href: '/dashboard/diagnostic/tests', icon: Activity },
+    { label: 'Reports', href: '/dashboard/diagnostic/reports', icon: Activity },
+    { label: 'Staff Accounts', href: '/dashboard/diagnostic/staff', icon: Activity },
+    { label: 'Audit Logs', href: '/dashboard/diagnostic/audit-logs', icon: ShieldCheck },
+  ],
 };
 
 const roleLabels: Record<UserRole, string> = {
@@ -91,6 +101,7 @@ const roleLabels: Record<UserRole, string> = {
   asha: 'ASHA Worker Portal',
   pharmacy: 'Pharmacy Portal',
   delivery: 'Delivery Partner Portal',
+  diagnostic: 'Diagnostic Centre Portal',
 };
 
 const roleProfileLabel: Record<UserRole, string> = {
@@ -99,6 +110,7 @@ const roleProfileLabel: Record<UserRole, string> = {
   asha: "View ASHA Worker Profile",
   pharmacy: "View Pharmacy Profile",
   delivery: "View Delivery Profile",
+  diagnostic: "View Centre Profile",
 };
 
 const initialNotificationsByRole: Record<UserRole, Array<{ id: string; title: string; message: string; time: string; unread: boolean }>> = {
@@ -124,6 +136,10 @@ const initialNotificationsByRole: Record<UserRole, Array<{ id: string; title: st
     { id: 'dl1', title: '🛵 New Delivery Assigned', message: 'Pickup medicine order from City Pharmacy.', time: '2m ago', unread: true },
     { id: 'dl2', title: '💰 Payment Credited', message: '₹450 added to your wallet for today\'s deliveries.', time: '4h ago', unread: true },
   ],
+  diagnostic: [
+    { id: 'dx1', title: '🔬 New Test Booking', message: 'CBC & Lipid Profile booked for Suresh Kumar.', time: '5m ago', unread: true },
+    { id: 'dx2', title: '🩸 Home Collection Requested', message: 'Sample pickup assigned for House 14, Ward 2.', time: '20m ago', unread: true },
+  ],
 };
 
 const roleProfileRoute: Record<UserRole, string> = {
@@ -132,6 +148,7 @@ const roleProfileRoute: Record<UserRole, string> = {
   asha: '/dashboard/asha-worker/profile',
   pharmacy: '/dashboard/pharmacy/profile',
   delivery: '/dashboard/delivery/profile',
+  diagnostic: '/dashboard/diagnostic/profile',
 };
 
 const roleSecondAction: Record<UserRole, { label: string; href: string }> = {
@@ -140,6 +157,7 @@ const roleSecondAction: Record<UserRole, { label: string; href: string }> = {
   asha: { label: 'Reports', href: '/dashboard/asha-worker/reports' },
   pharmacy: { label: 'Inventory', href: '/dashboard/pharmacy/inventory' },
   delivery: { label: 'Earnings', href: '/dashboard/delivery/earnings' },
+  diagnostic: { label: 'Bookings', href: '/dashboard/diagnostic/bookings' },
 };
 
 interface DashboardShellProps {
@@ -158,7 +176,7 @@ export function DashboardShell({ children, title, description }: DashboardShellP
   // Infer active role from current URL route path to guarantee 100% portal alignment across all screens
   const pathParts = (pathname || '').split('/');
   const routeRole = pathParts[2] as UserRole;
-  const validRoles: UserRole[] = ['patient', 'doctor', 'asha', 'pharmacy', 'delivery'];
+  const validRoles: UserRole[] = ['patient', 'doctor', 'asha', 'pharmacy', 'delivery', 'diagnostic'];
   const currentRole = (validRoles.includes(routeRole) ? routeRole : profile?.role || 'patient') as UserRole;
 
   // Strict Role Privacy & Access Guard: Lock users to their registered role portal only

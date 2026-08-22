@@ -1,4 +1,4 @@
-export type UserRole = 'patient' | 'asha' | 'doctor' | 'pharmacy' | 'delivery';
+export type UserRole = 'patient' | 'asha' | 'doctor' | 'pharmacy' | 'delivery' | 'diagnostic';
 export type Gender = 'male' | 'female' | 'others';
 
 export interface UserRecord {
@@ -41,6 +41,9 @@ export interface Profile {
   specialization: string | null;
   license_number: string | null;
   pharmacy_id: string | null;
+  centre_id?: string | null;
+  staff_id?: string | null;
+  staff_role?: DiagnosticStaffRole | null;
   vehicle_number: string | null;
   vehicle_type: string | null;
   passwordHash?: string | null;
@@ -294,4 +297,129 @@ export interface CartItem {
   prescription_required: boolean;
   pharmacy_id: string;
   image_url?: string | null;
+}
+
+// ----------------------------------------------------
+// Diagnostic Centre Secure Module Types
+// ----------------------------------------------------
+
+export type DiagnosticStaffRole = 'centre_admin' | 'lab_technician' | 'receptionist';
+export type DiagnosticCentreStatus = 'pending_verification' | 'approved' | 'rejected' | 'suspended';
+
+export interface DiagnosticCentre {
+  id: string;
+  centre_name: string;
+  centre_id: string; // Cryptographically generated: [NAME]-[SECURE-8-HEX]
+  address: string;
+  location: string;
+  contact_number: string;
+  official_email: string;
+  status: DiagnosticCentreStatus;
+  admin_staff_name: string;
+  admin_staff_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DiagnosticStaff {
+  id: string;
+  centre_id: string;
+  staff_id: string;
+  name: string;
+  email: string;
+  role: DiagnosticStaffRole;
+  passwordHash?: string;
+  passcode?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface DiagnosticTest {
+  id: string;
+  centre_id: string;
+  name: string;
+  code?: string;
+  category: string;
+  price: number;
+  prep_instructions: string | null;
+  est_completion_hours: number;
+  home_collection_available: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+export type BookingStatus = 'Pending' | 'Sample Collected' | 'Processing' | 'Completed' | 'Report Ready' | 'Cancelled';
+export type SampleStatus = 'Requested' | 'Scheduled' | 'Collector Assigned' | 'Sample Collected' | 'Sample Rejected' | 'Rescheduled';
+
+export interface DiagnosticBooking {
+  id: string;
+  booking_code: string;
+  centre_id: string;
+  patient_id: string;
+  patient_name: string;
+  patient_phone: string;
+  doctor_id?: string | null;
+  doctor_name?: string | null;
+  test_ids: string[];
+  test_names: string[];
+  total_price: number;
+  is_home_collection: boolean;
+  collection_address?: string | null;
+  booking_status: BookingStatus;
+  sample_status: SampleStatus;
+  scheduled_date: string;
+  scheduled_slot: string;
+  collector_name?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SampleCollectionRecord {
+  id: string;
+  booking_id: string;
+  centre_id: string;
+  patient_name: string;
+  patient_phone: string;
+  address: string | null;
+  test_names: string[];
+  appointment_time: string;
+  collector_name: string | null;
+  collector_staff_id: string | null;
+  status: SampleStatus;
+  updated_at: string;
+}
+
+export type ReportStatus = 'Processing' | 'Completed' | 'Uploaded' | 'Verified' | 'Shared';
+
+export interface DiagnosticReport {
+  id: string;
+  booking_id: string;
+  centre_id: string;
+  centre_name: string;
+  patient_id: string;
+  patient_name: string;
+  doctor_id?: string | null;
+  doctor_name?: string | null;
+  test_name: string;
+  file_name: string;
+  file_type: 'pdf' | 'jpg' | 'png';
+  file_size: number;
+  secure_file_key: string;
+  file_url: string;
+  status: ReportStatus;
+  uploaded_by_staff_id: string;
+  uploaded_by_name: string;
+  created_at: string;
+}
+
+export interface AuditLog {
+  id: string;
+  centre_id: string;
+  staff_id: string;
+  staff_name: string;
+  action: string;
+  record_ref: string | null;
+  details: string | null;
+  timestamp: string;
 }
