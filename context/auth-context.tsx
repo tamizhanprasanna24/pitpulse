@@ -610,20 +610,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // ignore & proceed to fallbacks
     }
 
-    // 4. Check local user registry (pre-seeded demo accounts & locally created accounts)
-    const registeredUsers = getStoredUsers();
-    const existingAccount = registeredUsers[normalizedEmail];
-
-    if (existingAccount) {
-      const storedPass = existingAccount.password || existingAccount.profile?.passcode;
-      if (!isPasswordMatch(storedPass)) {
-        return { error: 'Invalid email or password.' };
-      }
-      setLocalProfile(existingAccount.profile, password);
-      return { error: null, profile: existingAccount.profile };
-    }
-
-    // 5. Check Global Server API User Registry (cross-device account registry)
+    // 4. Check Global Server API User Registry (cross-device account registry)
     try {
       const res = await fetch(`/api/user-registry?email=${encodeURIComponent(normalizedEmail)}`);
       const data = await res.json();
@@ -641,7 +628,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       // ignore & check Supabase DB
     }
 
-    // 6. Query Supabase 'profiles' table for accounts registered from any device
+    // 5. Query Supabase 'profiles' table for accounts registered from any device
     try {
       let { data: remoteProfile } = await supabase
         .from('profiles')
@@ -669,6 +656,19 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
       }
     } catch {
       // Fall back
+    }
+
+    // 6. Check local user registry (pre-seeded demo accounts & locally created accounts as fallback)
+    const registeredUsers = getStoredUsers();
+    const existingAccount = registeredUsers[normalizedEmail];
+
+    if (existingAccount) {
+      const storedPass = existingAccount.password || existingAccount.profile?.passcode;
+      if (!isPasswordMatch(storedPass)) {
+        return { error: 'Invalid email or password.' };
+      }
+      setLocalProfile(existingAccount.profile, password);
+      return { error: null, profile: existingAccount.profile };
     }
 
     // 7. Account not registered - strictly reject login
