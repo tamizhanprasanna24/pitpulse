@@ -79,37 +79,56 @@ export default function DiagnosticBookingsPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const pendingCount = bookings.filter((b) => b.booking_status === 'Pending').length;
+
   return (
-    <DashboardShell title="Test Bookings Management" description={`Centre ID: ${centreID} • Diagnostic Workflow Status Center`}>
+    <DashboardShell title="Test Bookings & Acceptance Center" description={`Centre ID: ${centreID} • Incoming patient lab bookings and workflow control`}>
       <div className="space-y-6">
+        {/* Pending Booking Acceptance Alert Card */}
+        {pendingCount > 0 && (
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/20 text-amber-500 font-bold">
+                {pendingCount}
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-foreground">Pending Patient Bookings Require Acceptance</h3>
+                <p className="text-xs text-muted-foreground">Patients have booked diagnostic lab tests. Click &apos;Accept Booking&apos; to process sample collection.</p>
+              </div>
+            </div>
+            <Button size="sm" onClick={() => setStatusFilter('Pending')} className="bg-amber-500 hover:bg-amber-600 text-white text-xs">
+              View Pending ({pendingCount})
+            </Button>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card/60 p-4 rounded-xl border border-border/50 backdrop-blur-md">
           <div className="flex items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-80">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search patient, code, test..."
+                placeholder="Search Patient ID, Code, Name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-44">
+              <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Sample Collected">Sample Collected</SelectItem>
+                <SelectItem value="all">All Bookings ({bookings.length})</SelectItem>
+                <SelectItem value="Pending">⚡ Pending Acceptance ({pendingCount})</SelectItem>
                 <SelectItem value="Processing">Processing</SelectItem>
-                <SelectItem value="Completed">Completed</SelectItem>
                 <SelectItem value="Report Ready">Report Ready</SelectItem>
+                <SelectItem value="Completed">Completed</SelectItem>
                 <SelectItem value="Cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <Button onClick={fetchBookings} variant="outline" size="sm" className="gap-1 text-xs">
+          <Button onClick={fetchBookings} variant="outline" size="sm" className="gap-1.5 text-xs">
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh Bookings
           </Button>
         </div>

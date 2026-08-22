@@ -359,6 +359,9 @@ export interface DiagnosticBooking {
   patient_id: string;
   patient_name: string;
   patient_phone: string;
+  patient_age?: number | null;
+  patient_gender?: string | null;
+  patient_address?: string | null;
   doctor_id?: string | null;
   doctor_name?: string | null;
   test_ids: string[];
