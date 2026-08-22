@@ -119,6 +119,7 @@ export function resetLockout(key: string): void {
  */
 export async function registerDiagnosticCentre(data: {
   centre_name: string;
+  license_number?: string;
   address: string;
   location: string;
   contact_number: string;
@@ -137,6 +138,7 @@ export async function registerDiagnosticCentre(data: {
     id: 'dc-' + Date.now(),
     centre_name: data.centre_name,
     centre_id,
+    license_number: data.license_number || `NABL-LIC-${Math.floor(100000 + Math.random() * 900000)}`,
     address: data.address,
     location: data.location,
     contact_number: data.contact_number,

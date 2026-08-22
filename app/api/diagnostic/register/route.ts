@@ -6,6 +6,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       centre_name,
+      license_number,
       address,
       location,
       contact_number,
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
 
     const { centre, adminStaff } = await registerDiagnosticCentre({
       centre_name,
+      license_number,
       address,
       location,
       contact_number,
@@ -55,6 +57,7 @@ export async function POST(request: Request) {
       centre: {
         centre_name: centre.centre_name,
         centre_id: centre.centre_id, // Unpredictable secure Centre ID
+        license_number: centre.license_number,
         official_email: centre.official_email,
         status: centre.status,
         admin_staff_name: centre.admin_staff_name,

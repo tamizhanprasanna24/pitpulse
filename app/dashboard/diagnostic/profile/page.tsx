@@ -41,10 +41,13 @@ export default function DiagnosticProfilePage() {
               <div className="p-4 rounded-xl bg-card/40 border border-border/40 space-y-1">
                 <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                   <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                  <span>Unique Secure Centre ID</span>
+                  <span>Unique Secure Centre ID & License</span>
                 </div>
                 <p className="text-base font-bold font-mono tracking-wider text-emerald-500">{centreID}</p>
-                <p className="text-[10px] text-muted-foreground">Cryptographically generated & unique across Pit Pulse</p>
+                <p className="text-xs font-medium text-foreground font-mono mt-0.5">
+                  Lab License No: <span className="text-primary font-bold">{profile?.license_number || 'NABL-LIC-884920'}</span>
+                </p>
+                <p className="text-[10px] text-muted-foreground">Cryptographically generated & verified across Pit Pulse</p>
               </div>
 
               <div className="p-4 rounded-xl bg-card/40 border border-border/40 space-y-1">

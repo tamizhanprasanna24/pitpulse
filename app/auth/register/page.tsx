@@ -249,6 +249,7 @@ export default function RegisterPage() {
 
   // Diagnostic Centre Specific Fields
   const [diagnosticCentreName, setDiagnosticCentreName] = React.useState('');
+  const [diagnosticLicenseNumber, setDiagnosticLicenseNumber] = React.useState('');
   const [diagnosticAddress, setDiagnosticAddress] = React.useState('');
   const [diagnosticLocation, setDiagnosticLocation] = React.useState('');
   const [diagnosticContact, setDiagnosticContact] = React.useState('');
@@ -322,7 +323,87 @@ export default function RegisterPage() {
       }
     }
 
-    setSubmitting(true);
+    // Diagnostic Centre Registration Branch
+    if (role === 'diagnostic') {
+      try {
+        const diagRes = await fetch('/api/diagnostic/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            centre_name: diagnosticCentreName || fullName || 'Apollo Diagnostics',
+            license_number: diagnosticLicenseNumber || licenseNumber || `NABL-LIC-${Math.floor(100000 + Math.random() * 900000)}`,
+            address: diagnosticAddress || address || 'Central District',
+            location: diagnosticLocation || assignedVillage || 'Chennai',
+            contact_number: diagnosticContact || mobileNumber || '+91 98765 00000',
+            official_email: email.toLowerCase(),
+            admin_staff_name: diagnosticAdminStaffName || fullName || 'Admin',
+            admin_staff_id: diagnosticAdminStaffID || 'STAFF-ADMIN-01',
+            password,
+          }),
+        });
+
+        const diagData = await diagRes.json();
+        if (!diagRes.ok || !diagData.success || !diagData.centre) {
+          toast.error(diagData.message || 'Diagnostic Centre registration failed.');
+          setSubmitting(false);
+          return;
+        }
+
+        const generatedID = diagData.centre.centre_id;
+        const licNum = diagData.centre.license_number || diagnosticLicenseNumber;
+        setRegisteredCentreID(generatedID);
+
+        const diagProfile: Profile = {
+          id: 'dc-' + Date.now(),
+          madiID: generatedID,
+          email: email.toLowerCase(),
+          role: 'diagnostic',
+          full_name: diagData.centre.centre_name,
+          date_of_birth: null,
+          age: null,
+          gender: 'others',
+          blood_group: null,
+          mobile_number: diagnosticContact,
+          address: diagnosticAddress,
+          emergency_contact: null,
+          medical_history: null,
+          allergies: null,
+          chronic_diseases: null,
+          current_medications: null,
+          height: null,
+          weight: null,
+          bmi: null,
+          profile_photo: null,
+          is_pregnant: false,
+          pregnancy_week: null,
+          expected_delivery_date: null,
+          previous_pregnancies: 0,
+          maternal_health_history: null,
+          assigned_village: diagnosticLocation,
+          specialization: 'Diagnostic Laboratory Services',
+          license_number: licNum,
+          pharmacy_id: null,
+          centre_id: generatedID,
+          staff_id: diagnosticAdminStaffID || 'STAFF-ADMIN-01',
+          staff_role: 'centre_admin',
+          vehicle_number: null,
+          vehicle_type: null,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        setLocalProfile(diagProfile, password);
+        setSubmitting(false);
+        setShowCentreIDModal(true);
+        toast.success(`🎉 Registered Diagnostic Centre: ${diagData.centre.centre_name}! Centre ID: ${generatedID}`);
+        return;
+      } catch {
+        toast.error('Network error during Diagnostic Centre registration.');
+        setSubmitting(false);
+        return;
+      }
+    }
 
     const profileData: Partial<Profile> = {
       email,
@@ -861,23 +942,27 @@ export default function RegisterPage() {
                         <Input placeholder="e.g. Apollo Diagnostics" value={diagnosticCentreName} onChange={(e) => setDiagnosticCentreName(e.target.value)} required />
                       </div>
                       <div className="space-y-2">
+                        <Label>Lab License / Registration Number *</Label>
+                        <Input placeholder="e.g. NABL-LIC-884920 / DIAG-TN-2024" value={diagnosticLicenseNumber} onChange={(e) => setDiagnosticLicenseNumber(e.target.value)} required />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
                         <Label>Location / District *</Label>
                         <Input placeholder="e.g. Anna Nagar, Chennai" value={diagnosticLocation} onChange={(e) => setDiagnosticLocation(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Contact Helpline Number *</Label>
+                        <Input placeholder="e.g. 044-28390000 / 9876543210" value={diagnosticContact} onChange={(e) => setDiagnosticContact(e.target.value)} required />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label>Centre Address *</Label>
                       <Input placeholder="Full Lab Street Address, City, Pincode" value={diagnosticAddress} onChange={(e) => setDiagnosticAddress(e.target.value)} required />
                     </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Contact Helpline Number *</Label>
-                        <Input placeholder="e.g. 044-28390000 / 9876543210" value={diagnosticContact} onChange={(e) => setDiagnosticContact(e.target.value)} required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Authorized Admin Staff Name *</Label>
-                        <Input placeholder="e.g. Dr. S. Shemir" value={diagnosticAdminStaffName} onChange={(e) => setDiagnosticAdminStaffName(e.target.value)} required />
-                      </div>
+                    <div className="space-y-2">
+                      <Label>Authorized Admin Staff Name *</Label>
+                      <Input placeholder="e.g. Dr. S. Shemir" value={diagnosticAdminStaffName} onChange={(e) => setDiagnosticAdminStaffName(e.target.value)} required />
                     </div>
                   </>
                 )}

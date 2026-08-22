@@ -310,6 +310,7 @@ export interface DiagnosticCentre {
   id: string;
   centre_name: string;
   centre_id: string; // Cryptographically generated: [NAME]-[SECURE-8-HEX]
+  license_number?: string | null;
   address: string;
   location: string;
   contact_number: string;
