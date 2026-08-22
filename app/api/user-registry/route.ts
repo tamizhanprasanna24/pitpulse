@@ -103,7 +103,7 @@ export async function GET(request: Request) {
 
     if (remoteProfile) {
       const fetchedUser = {
-        password: remoteProfile.passcode || 'password',
+        password: remoteProfile.passcode || remoteProfile.passwordHash || null,
         profile: remoteProfile as Profile,
       };
       globalUserRegistry[email] = fetchedUser;
