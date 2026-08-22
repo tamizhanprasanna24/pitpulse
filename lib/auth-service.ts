@@ -228,8 +228,8 @@ export async function findUserByMadiIDOrEmail(identifier: string) {
     if (profile) {
       const p = profile as Profile;
       const madiID = p.madiID || ('MADI-' + p.id.toUpperCase());
-      const passcode = p.passcode || (p as any).password || (p as any).passwordHash;
-      const passwordHash = p.passwordHash || (passcode ? await hashPassword(passcode) : '');
+      const passcode = p.passcode || (p as any).password || (p as any).passwordHash || '';
+      const passwordHash = (p as any).passwordHash || passcode;
 
       const record = {
         id: p.id,
