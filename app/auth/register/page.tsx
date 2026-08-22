@@ -352,6 +352,16 @@ export default function RegisterPage() {
 
       const apiData = await apiRes.json();
       if (!apiRes.ok || !apiData.success) {
+        if (apiData.message?.toLowerCase().includes('already exists') || apiData.message?.toLowerCase().includes('already registered')) {
+          toast.info('An account with this email is already registered! Redirecting to Sign In...', {
+            duration: 4000,
+          });
+          setTimeout(() => {
+            router.push('/auth/login');
+          }, 1500);
+          setSubmitting(false);
+          return;
+        }
         toast.error(apiData.message || 'User already exists.');
         setSubmitting(false);
         return;
