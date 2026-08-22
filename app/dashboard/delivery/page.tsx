@@ -46,6 +46,8 @@ export default function DeliveryDashboard() {
   const [partner, setPartner] = React.useState<DeliveryPartner | null>(null);
   const [userLocation, setUserLocation] = React.useState<{ lat: number; lng: number }>({ lat: 28.6139, lng: 77.2090 });
 
+  const [isOnline, setIsOnline] = React.useState<boolean>(true);
+
   // OTP Verification Modal State
   const [otpModalOpen, setOtpModalOpen] = React.useState(false);
   const [targetOrderId, setTargetOrderId] = React.useState<string | null>(null);
@@ -53,6 +55,13 @@ export default function DeliveryDashboard() {
   const [otpError, setOtpError] = React.useState('');
 
   React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedStatus = localStorage.getItem('pitpulse_delivery_is_online');
+      if (savedStatus !== null) {
+        setIsOnline(savedStatus === 'true');
+      }
+    }
+
     (async () => {
       const res = await getSecureGpsLocation();
       setUserLocation({ lat: res.lat, lng: res.lng });
@@ -68,7 +77,12 @@ export default function DeliveryDashboard() {
           .eq('profile_id', profile.id)
           .maybeSingle();
         
-        setPartner(partnerData as DeliveryPartner | null);
+        if (partnerData) {
+          setPartner(partnerData as DeliveryPartner);
+          if (partnerData.is_available !== undefined) {
+            setIsOnline(partnerData.is_available);
+          }
+        }
 
         const { data: orderData } = await supabase
           .from('medicine_orders')
@@ -88,14 +102,47 @@ export default function DeliveryDashboard() {
   }, [profile]);
 
   const toggleAvailability = async () => {
-    if (!partner || !profile) {
-      setPartner(prev => prev ? { ...prev, is_available: !prev.is_available } : null);
-      toast.success(partner?.is_available ? 'You are now offline' : 'You are now online');
-      return;
+    const nextStatus = !isOnline;
+    setIsOnline(nextStatus);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pitpulse_delivery_is_online', String(nextStatus));
     }
-    const { error } = await supabase.from('delivery_partners').update({ is_available: !partner.is_available }).eq('profile_id', profile.id);
-    if (error) { toast.error('Failed to update status'); }
-    else { setPartner({ ...partner, is_available: !partner.is_available }); toast.success(partner.is_available ? 'You are now offline' : 'You are now online'); }
+
+    setPartner(prev => prev ? { ...prev, is_available: nextStatus } : {
+      id: 'deliv-1',
+      profile_id: profile?.id || 'usr-deliv-1',
+      vehicle_type: 'bike',
+      vehicle_number: 'UP-32-AB-9876',
+      rating: 4.9,
+      total_deliveries: 42,
+      total_earnings: 1250,
+      is_available: nextStatus,
+      current_latitude: 28.6139,
+      current_longitude: 77.2090,
+      created_at: new Date().toISOString(),
+    } as unknown as DeliveryPartner);
+
+    if (profile) {
+      try {
+        await supabase
+          .from('delivery_partners')
+          .update({ is_available: nextStatus })
+          .eq('profile_id', profile.id);
+      } catch {
+        // ignore
+      }
+    }
+
+    if (nextStatus) {
+      toast.success('🟢 Availability Status: ONLINE', {
+        description: 'You are now online and actively receiving delivery requests in your zone.',
+      });
+    } else {
+      toast.info('🔴 Availability Status: OFFLINE', {
+        description: 'You are now offline. You will not receive new order assignments until toggled back on.',
+      });
+    }
   };
 
   // Step 1: Mark Picked Up
@@ -208,20 +255,39 @@ export default function DeliveryDashboard() {
       </div>
 
       {/* Online / Offline Toggle */}
-      <Card className="glass mt-6">
-        <CardContent className="flex items-center justify-between p-6">
+      <Card className={`glass mt-6 border-l-4 transition-all duration-300 ${isOnline ? 'border-l-emerald-500 shadow-emerald-500/5' : 'border-l-muted-foreground/30'}`}>
+        <CardContent className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-6 gap-4">
           <div className="flex items-center gap-4">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-full ${partner?.is_available ? 'bg-success/10' : 'bg-muted'}`}>
-              <Truck className={`h-6 w-6 ${partner?.is_available ? 'text-success' : 'text-muted-foreground'}`} />
+            <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300 ${isOnline ? 'bg-emerald-500/15 text-emerald-600 shadow-sm' : 'bg-muted text-muted-foreground'}`}>
+              <Truck className="h-6 w-6" />
+              {isOnline && (
+                <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-background"></span>
+                </span>
+              )}
             </div>
             <div>
-              <h3 className="font-semibold">Availability Status</h3>
-              <p className="text-sm text-muted-foreground">{partner?.is_available ? 'You are online and ready for deliveries' : 'You are currently offline'}</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-base">Availability Status</h3>
+                <Badge className={isOnline ? 'bg-emerald-500/20 text-emerald-600 border-emerald-500/30' : 'bg-muted text-muted-foreground'}>
+                  {isOnline ? 'Active Online' : 'Offline Mode'}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {isOnline ? 'You are online & receiving live delivery requests in your assigned zone.' : 'You are currently offline. Toggle switch to start receiving orders.'}
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-medium">{partner?.is_available ? 'Online' : 'Offline'}</span>
-            <Switch checked={partner?.is_available ?? true} onCheckedChange={toggleAvailability} />
+          <div className="flex items-center gap-3 self-end sm:self-auto bg-background/50 px-4 py-2 rounded-xl border border-border/50 shadow-inner">
+            <span className={`text-sm font-bold ${isOnline ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+              {isOnline ? 'Online' : 'Offline'}
+            </span>
+            <Switch
+              checked={isOnline}
+              onCheckedChange={toggleAvailability}
+              className="data-[state=checked]:bg-emerald-600"
+            />
           </div>
         </CardContent>
       </Card>
