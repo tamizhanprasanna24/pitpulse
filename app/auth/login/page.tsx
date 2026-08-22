@@ -19,16 +19,16 @@ export default function LoginPage() {
   const [loginType, setLoginType] = React.useState<'standard' | 'diagnostic'>('standard');
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
-  const [centreID, setCentreID] = React.useState('');
+  const [diagnosticIdentifier, setDiagnosticIdentifier] = React.useState(''); // Email or Centre ID
   const [staffID, setStaffID] = React.useState('');
   const [showPassword, setShowPassword] = React.useState(false);
   const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    if (!loading && user && profile && !email.trim() && !password.trim() && !centreID.trim()) {
+    if (!loading && user && profile && !email.trim() && !password.trim() && !diagnosticIdentifier.trim()) {
       router.push(getDashboardRoute(profile.role));
     }
-  }, [user, profile, loading, router, email, password, centreID]);
+  }, [user, profile, loading, router, email, password, diagnosticIdentifier]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,8 +36,8 @@ export default function LoginPage() {
 
     try {
       if (loginType === 'diagnostic') {
-        if (!centreID || !staffID || !password) {
-          toast.error('Please enter Centre ID, Staff ID, and Password.');
+        if (!diagnosticIdentifier || !password) {
+          toast.error('Please enter Official Email or Centre ID and Password.');
           setSubmitting(false);
           return;
         }
@@ -45,18 +45,23 @@ export default function LoginPage() {
         const res = await fetch('/api/diagnostic/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ centre_id: centreID.trim(), staff_id: staffID.trim(), password: password.trim() }),
+          body: JSON.stringify({
+            centre_id: diagnosticIdentifier.trim(),
+            email: diagnosticIdentifier.trim(),
+            staff_id: staffID.trim() || undefined,
+            password: password.trim(),
+          }),
         });
 
         const data = await res.json();
         if (!res.ok || !data.success || !data.profile) {
-          toast.error(data.message || 'Invalid Centre ID or Staff credentials.');
+          toast.error(data.message || 'Invalid Diagnostic Centre credentials.');
           setSubmitting(false);
           return;
         }
 
         setLocalProfile(data.profile, password);
-        toast.success(`Signed in as ${data.staff.name} (${data.staff.role.toUpperCase()})`);
+        toast.success(`Signed in to ${data.centre.centre_name}!`);
         router.push('/dashboard/diagnostic');
         return;
       }
@@ -121,11 +126,11 @@ export default function LoginPage() {
               </button>
             </div>
             <CardTitle className="text-2xl font-semibold tracking-tight">
-              {loginType === 'diagnostic' ? 'Diagnostic Staff Login' : 'Welcome back'}
+              {loginType === 'diagnostic' ? 'Diagnostic Centre Login' : 'Welcome back'}
             </CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               {loginType === 'diagnostic'
-                ? 'Sign in with your Centre ID, Staff ID, and secure password'
+                ? 'Sign in with your Official Email or Centre ID and password'
                 : 'Sign in with your email to access your healthcare dashboard'}
             </CardDescription>
           </CardHeader>
@@ -135,33 +140,35 @@ export default function LoginPage() {
               {loginType === 'diagnostic' ? (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="centreID">Centre ID *</Label>
+                    <Label htmlFor="diagnosticIdentifier">Official Email or Centre ID *</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="centreID"
+                        id="diagnosticIdentifier"
                         type="text"
-                        placeholder="e.g. APOLLO-7F2K91QM"
-                        value={centreID}
-                        onChange={(e) => setCentreID(e.target.value.toUpperCase())}
-                        className="pl-10 uppercase tracking-wide font-mono"
+                        placeholder="e.g. info@apollodiagnostics.in or APOLLO-7F2K91QM"
+                        value={diagnosticIdentifier}
+                        onChange={(e) => setDiagnosticIdentifier(e.target.value)}
+                        className="pl-10 font-mono text-sm"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="staffID">Staff ID *</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="staffID">Staff ID (Optional)</Label>
+                      <span className="text-[10px] text-muted-foreground">Default: Admin</span>
+                    </div>
                     <div className="relative">
                       <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="staffID"
                         type="text"
-                        placeholder="e.g. STAFF-01 / LAB-02"
+                        placeholder="e.g. STAFF-01 / LAB-02 (Optional)"
                         value={staffID}
                         onChange={(e) => setStaffID(e.target.value.toUpperCase())}
-                        className="pl-10 uppercase tracking-wide font-mono"
-                        required
+                        className="pl-10 uppercase tracking-wide font-mono text-xs"
                       />
                     </div>
                   </div>

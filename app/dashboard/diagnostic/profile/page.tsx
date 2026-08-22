@@ -23,7 +23,7 @@ export default function DiagnosticProfilePage() {
                   DX
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-bold">{profile?.full_name || 'Diagnostic Centre'}</CardTitle>
+                  <CardTitle className="text-xl font-bold">{profile?.full_name?.toLowerCase().includes('centre') || profile?.full_name?.toLowerCase().includes('diagnostic') || profile?.full_name?.toLowerCase().includes('lab') ? profile?.full_name : `${profile?.full_name || 'Apollo'} Diagnostic Centre`}</CardTitle>
                   <CardDescription className="text-xs mt-0.5">
                     Licensed Diagnostic Laboratory & Pathological Services
                   </CardDescription>
@@ -50,9 +50,9 @@ export default function DiagnosticProfilePage() {
               <div className="p-4 rounded-xl bg-card/40 border border-border/40 space-y-1">
                 <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                   <User className="h-4 w-4 text-indigo-500" />
-                  <span>Logged In Staff Profile</span>
+                  <span>Logged In Authorized Staff</span>
                 </div>
-                <p className="text-sm font-bold">{profile?.full_name || 'Staff'}</p>
+                <p className="text-sm font-bold">{profile?.full_name || 'Authorized Staff'}</p>
                 <p className="text-xs text-muted-foreground font-mono">
                   Staff ID: {profile?.staff_id || 'ADMIN-01'} • Role: <span className="uppercase text-foreground">{staffRole.replace('_', ' ')}</span>
                 </p>

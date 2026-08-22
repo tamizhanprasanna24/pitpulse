@@ -189,6 +189,10 @@ export default function RegisterPage() {
       toast.error('Delivery Partner Verification Required: Please enter your vehicle plate number, type, and driving license');
       return;
     }
+    if (role === 'diagnostic' && (!diagnosticCentreName || !diagnosticAddress || !diagnosticLocation || !diagnosticContact || !diagnosticAdminStaffName)) {
+      toast.error('Diagnostic Verification Required: Please fill Diagnostic Centre Name, Address, Location, Contact, and Admin Staff Name');
+      return;
+    }
 
     try {
       const res = await fetch('/api/auth/send-otp', {
@@ -243,12 +247,23 @@ export default function RegisterPage() {
     }
   };
 
+  // Diagnostic Centre Specific Fields
+  const [diagnosticCentreName, setDiagnosticCentreName] = React.useState('');
+  const [diagnosticAddress, setDiagnosticAddress] = React.useState('');
+  const [diagnosticLocation, setDiagnosticLocation] = React.useState('');
+  const [diagnosticContact, setDiagnosticContact] = React.useState('');
+  const [diagnosticAdminStaffName, setDiagnosticAdminStaffName] = React.useState('');
+  const [diagnosticAdminStaffID, setDiagnosticAdminStaffID] = React.useState('STAFF-ADMIN-01');
+  const [registeredCentreID, setRegisteredCentreID] = React.useState('');
+  const [showCentreIDModal, setShowCentreIDModal] = React.useState(false);
+
   const getStep3Title = () => {
     switch (role) {
       case 'doctor': return 'Doctor License & Clinical Credentials';
       case 'asha': return 'ASHA Worker & Community Health Credentials';
       case 'pharmacy': return 'Pharmacy License & Store Registration';
       case 'delivery': return 'Delivery Vehicle & Driving License Verification';
+      case 'diagnostic': return 'Diagnostic Centre & Laboratory Verification';
       default: return 'Patient Health & Medical History';
     }
   };
@@ -259,6 +274,7 @@ export default function RegisterPage() {
       case 'asha': return 'Provide your ASHA registration ID, assigned village, and primary health center ward.';
       case 'pharmacy': return 'Provide your retail drug license number, pharmacy store name, and pharmacist ID.';
       case 'delivery': return 'Provide your driving license, vehicle registration, type, and operating delivery zone.';
+      case 'diagnostic': return 'Provide your diagnostic lab registration details, location, and official contact info.';
       default: return 'Provide your medical history, allergies, and chronic health details for AI assistance.';
     }
   };
@@ -269,6 +285,7 @@ export default function RegisterPage() {
       case 'asha': return 'Step 4: ASHA Field Worker Security OTP Verification';
       case 'pharmacy': return 'Step 4: Pharmacy License & Security OTP Verification';
       case 'delivery': return 'Step 4: Delivery Partner Security OTP Verification';
+      case 'diagnostic': return 'Step 4: Diagnostic Centre Security OTP Verification';
       default: return 'Step 4: Patient Account Security OTP Verification';
     }
   };
@@ -836,9 +853,38 @@ export default function RegisterPage() {
                   </>
                 )}
 
+                {role === 'diagnostic' && (
+                  <>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Diagnostic Centre Name *</Label>
+                        <Input placeholder="e.g. Apollo Diagnostics" value={diagnosticCentreName} onChange={(e) => setDiagnosticCentreName(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Location / District *</Label>
+                        <Input placeholder="e.g. Anna Nagar, Chennai" value={diagnosticLocation} onChange={(e) => setDiagnosticLocation(e.target.value)} required />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Centre Address *</Label>
+                      <Input placeholder="Full Lab Street Address, City, Pincode" value={diagnosticAddress} onChange={(e) => setDiagnosticAddress(e.target.value)} required />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Contact Helpline Number *</Label>
+                        <Input placeholder="e.g. 044-28390000 / 9876543210" value={diagnosticContact} onChange={(e) => setDiagnosticContact(e.target.value)} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Authorized Admin Staff Name *</Label>
+                        <Input placeholder="e.g. Dr. S. Shemir" value={diagnosticAdminStaffName} onChange={(e) => setDiagnosticAdminStaffName(e.target.value)} required />
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="flex items-start gap-2 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
                   <AlertCircle className="h-4 w-4 shrink-0 text-primary" />
-                  <span>By registering, you agree to RuralCare Terms of Service. Medical data is securely stored and encrypted.</span>
+                  <span>By registering, you agree to Pit Pulse Terms of Service. Medical & diagnostic data is securely encrypted.</span>
                 </div>
 
                 <div className="flex gap-2">
@@ -952,6 +998,52 @@ export default function RegisterPage() {
           <DialogFooter className="sm:justify-center">
             <Button onClick={() => setShowOtpModal(false)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
               Enter Code & Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Diagnostic Centre Registration Successful Modal */}
+      <Dialog open={showCentreIDModal} onOpenChange={setShowCentreIDModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 mb-2">
+              <ShieldCheck className="h-7 w-7" />
+            </div>
+            <DialogTitle className="text-center text-xl font-bold">Diagnostic Centre Registered!</DialogTitle>
+            <DialogDescription className="text-center text-xs">
+              Your Diagnostic Centre profile has been created and submitted for Pit Pulse Admin review.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2 text-xs">
+            <div className="p-3 rounded-lg bg-card/80 border border-border/50 space-y-1">
+              <span className="text-muted-foreground block font-medium">Diagnostic Centre Name</span>
+              <span className="font-bold text-sm text-foreground">{diagnosticCentreName || 'Apollo Diagnostics'}</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 space-y-1 text-center">
+              <span className="text-emerald-600 font-semibold block text-[11px]">Unique Secure Centre ID</span>
+              <span className="font-bold font-mono text-lg text-emerald-500 tracking-wider select-all">{registeredCentreID}</span>
+              <span className="text-[10px] text-muted-foreground block">Cryptographically generated & unique</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 space-y-1">
+              <span className="text-amber-500 font-semibold block">⏳ Verification Status: Pending Admin Review</span>
+              <p className="text-[11px] text-muted-foreground">
+                A Pit Pulse Doctor/Admin will verify your centre credentials. Once approved, you can log in using your Official Email (<b className="text-foreground">{email}</b>) or Centre ID (<b className="text-foreground">{registeredCentreID}</b>).
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              className="w-full bg-gradient-to-r from-primary to-accent text-white"
+              onClick={() => {
+                setShowCentreIDModal(false);
+                router.push('/dashboard/diagnostic');
+              }}
+            >
+              Proceed to Diagnostic Portal
             </Button>
           </DialogFooter>
         </DialogContent>
