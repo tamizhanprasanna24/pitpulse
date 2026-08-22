@@ -101,7 +101,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed && parsed.id) {
+          const legacyDemoEmails = [
+            'patient@gmail.com', 'doctor@gmail.com', 'pharmacy@gmail.com',
+            'delivery@gmail.com', 'ashaworker3@gmail.com', 'patient3@gmail.com', 'p.atient99@gmail.com'
+          ];
+          if (parsed && legacyDemoEmails.includes(parsed.email?.toLowerCase())) {
+            localStorage.removeItem(LOCAL_STORAGE_PROFILE_KEY);
+            setProfile(null);
+            setUser(null);
+          } else if (parsed && parsed.id) {
             setProfile(parsed);
             setUser({ id: parsed.id, email: parsed.email } as User);
             hasLocalSession = true;
