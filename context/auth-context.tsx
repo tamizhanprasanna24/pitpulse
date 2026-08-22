@@ -262,7 +262,7 @@ function saveUserToRegistry(email: string, password: string, profile: Profile) {
     const normalizedEmail = rawInput;
 
     const isPasswordMatch = (expected?: string | null) => {
-      if (!expected || !expected.trim()) return true;
+      if (!expected || !expected.trim()) return false;
       const exp = expected.trim();
       const input = password.trim();
 

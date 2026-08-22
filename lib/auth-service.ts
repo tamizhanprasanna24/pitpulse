@@ -31,7 +31,7 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  if (!hash) return true;
+  if (!hash || !hash.trim()) return false;
   if (hash === password || hash.toLowerCase() === password.trim().toLowerCase()) return true;
   try {
     return await bcrypt.compare(password, hash);
